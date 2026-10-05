@@ -1,0 +1,3393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>ЕГЭ Тренажёр</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "SF Pro Display",
+                "SF Pro Text",
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            color: #111827;
+
+            background:
+                radial-gradient(
+                    circle at 20% 20%,
+                    rgba(80, 170, 255, 0.35),
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at 80% 70%,
+                    rgba(30, 110, 230, 0.25),
+                    transparent 40%
+                ),
+                linear-gradient(
+                    135deg,
+                    #eef7ff,
+                    #dceeff,
+                    #f7fbff,
+                    #d9ecff
+                );
+
+            background-size: 180% 180%;
+
+            animation: backgroundMove 14s ease-in-out infinite;
+        }
+
+        @keyframes backgroundMove {
+
+            0% {
+                background-position: 0% 0%;
+            }
+
+            50% {
+                background-position: 100% 100%;
+            }
+
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+
+            width: 55vw;
+            height: 55vw;
+
+            max-width: 420px;
+            max-height: 420px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.25);
+
+            filter: blur(45px);
+
+            pointer-events: none;
+
+            animation: floatingBlob 12s ease-in-out infinite;
+        }
+
+        body::before {
+            top: -15%;
+            left: -10%;
+        }
+
+        body::after {
+            right: -15%;
+            bottom: -10%;
+
+            animation-delay: -6s;
+        }
+
+        @keyframes floatingBlob {
+
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, 20px) scale(1.15);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+
+        /* =========================
+           ОБЩИЙ ЭКРАН
+        ========================= */
+
+        .screen {
+            position: relative;
+
+            width: 100%;
+            height: 100%;
+
+            display: none;
+
+            flex-direction: column;
+
+            padding:
+                calc(env(safe-area-inset-top) + 20px)
+                18px
+                calc(env(safe-area-inset-bottom) + 20px);
+
+            overflow: hidden;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+
+        /* =========================
+           HOME
+        ========================= */
+
+        #homeScreen {
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+        }
+
+        .home-content {
+            width: min(90vw, 420px);
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .home-title {
+            font-size: clamp(30px, 9vw, 46px);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+        }
+
+        .home-subtitle {
+            font-size: 16px;
+            line-height: 1.45;
+
+            max-width: 330px;
+
+            color: rgba(17, 24, 39, 0.65);
+        }
+
+
+        /* =========================
+           GLASS BUTTON
+        ========================= */
+
+        .glass-button {
+            border: 1px solid rgba(255, 255, 255, 0.8);
+
+            background: rgba(255, 255, 255, 0.48);
+
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+
+            box-shadow:
+                0 12px 35px rgba(30, 100, 200, 0.12),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+
+            color: #111827;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.15s ease,
+                background 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .glass-button:active {
+            transform: scale(0.96);
+
+            background: rgba(255, 255, 255, 0.68);
+
+            box-shadow:
+                0 5px 18px rgba(30, 100, 200, 0.1),
+                inset 0 1px 2px rgba(255, 255, 255, 1);
+        }
+
+        .start-button {
+            width: min(86vw, 350px);
+            min-height: 64px;
+
+            padding: 15px 25px;
+
+            border-radius: 22px;
+
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           TOP BACK BUTTON
+        ========================= */
+
+        .back-button {
+            position: absolute;
+
+            top: calc(env(safe-area-inset-top) + 14px);
+            left: 16px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 27px;
+            font-weight: 400;
+
+            z-index: 20;
+        }
+
+
+        /* =========================
+           TOPICS
+        ========================= */
+
+        #topicsScreen {
+            align-items: center;
+        }
+
+        .topics-title {
+            margin-top: 60px;
+            margin-bottom: 25px;
+
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .topics-list {
+            width: min(92vw, 430px);
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 12px;
+        }
+
+        .topic-button {
+            position: relative;
+
+            width: 100%;
+            min-height: 65px;
+
+            padding: 12px 17px;
+
+            border-radius: 19px;
+
+            display: flex;
+            align-items: center;
+
+            text-align: left;
+
+            font-size: 16px;
+            font-weight: 650;
+        }
+
+        .topic-button.disabled {
+            opacity: 0.42;
+            cursor: default;
+        }
+
+        .topic-button .soon {
+            margin-left: auto;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            padding: 5px 8px;
+
+            border-radius: 8px;
+
+            background: rgba(100, 116, 139, 0.12);
+            color: #64748b;
+        }
+
+
+        /* =========================
+           TRAINING
+        ========================= */
+
+        #trainingScreen {
+            padding-left: 0;
+            padding-right: 0;
+            padding-bottom: 0;
+        }
+
+
+        /* =========================
+           STATS
+        ========================= */
+
+        .stats {
+            position: absolute;
+
+            top: calc(env(safe-area-inset-top) + 14px);
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: min(78vw, 320px);
+
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+
+            gap: 5px;
+
+            z-index: 10;
+        }
+
+        .stat {
+            height: 34px;
+
+            padding: 0 6px;
+
+            border-radius: 10px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+
+            font-size: 10px;
+            font-weight: 650;
+
+            white-space: nowrap;
+
+            border: 1px solid rgba(255, 255, 255, 0.7);
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            box-shadow:
+                0 7px 18px rgba(30, 100, 200, 0.08),
+                inset 0 1px 2px rgba(255, 255, 255, 0.85);
+        }
+
+        .stat.correct {
+            color: #16803c;
+            background: rgba(220, 252, 231, 0.58);
+        }
+
+        .stat.wrong {
+            color: #dc2626;
+            background: rgba(254, 226, 226, 0.58);
+        }
+
+        .stat.total {
+            color: #64748b;
+            background: rgba(241, 245, 249, 0.58);
+        }
+
+
+        /* =========================
+           TRAINING TOP
+        ========================= */
+
+        .training-top {
+            position: relative;
+
+            height: 50%;
+
+            min-height: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            padding:
+                75px
+                20px
+                15px;
+        }
+
+        .word-area {
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            min-height: 130px;
+
+            text-align: center;
+        }
+
+        .word {
+            font-size: clamp(38px, 11vw, 58px);
+
+            font-weight: 800;
+
+            letter-spacing: -1px;
+
+            color: #111827;
+
+            min-height: 70px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word .missing {
+            display: inline-block;
+
+            min-width: 0.6em;
+
+            color: #2563eb;
+        }
+
+
+        /* =========================
+           RESULT
+        ========================= */
+
+        .result {
+            margin-top: 12px;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+
+            min-height: 54px;
+
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 12px;
+            font-weight: 600;
+
+            color: rgba(17, 24, 39, 0.55);
+
+            line-height: 1.3;
+        }
+
+        .result-word {
+            margin-top: 3px;
+
+            font-size: 16px;
+            font-weight: 700;
+
+            line-height: 1.3;
+        }
+
+        .result.correct-result .result-word {
+            color: #16803c;
+        }
+
+        .result.wrong-result .result-word {
+            color: #dc2626;
+        }
+
+
+        /* =========================
+           ANSWER AREA
+        ========================= */
+
+        .training-bottom {
+            height: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding:
+                10px
+                20px
+                calc(env(safe-area-inset-bottom) + 25px);
+        }
+
+        .answer-buttons {
+            width: min(78vw, 310px);
+
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+
+            gap: 16px;
+        }
+
+        .answer-button {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+
+            border-radius: 25px;
+
+            font-size: clamp(36px, 11vw, 58px);
+            font-weight: 750;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            user-select: none;
+
+            transition:
+                transform 0.12s ease,
+                background 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .answer-button:active {
+            transform: scale(0.94);
+        }
+
+        .answer-button.correct-answer {
+            background: rgba(187, 247, 208, 0.75);
+            border-color: rgba(34, 197, 94, 0.7);
+
+            color: #15803d;
+
+            box-shadow:
+                0 12px 30px rgba(34, 197, 94, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+        }
+
+        .answer-button.wrong-answer {
+            background: rgba(254, 202, 202, 0.78);
+            border-color: rgba(239, 68, 68, 0.7);
+
+            color: #dc2626;
+
+            box-shadow:
+                0 12px 30px rgba(239, 68, 68, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+        }
+
+        .answer-button.disabled {
+            pointer-events: none;
+        }
+
+
+        /* =========================
+           ANIMATIONS
+        ========================= */
+
+        .fade-in {
+            animation: fadeIn 0.22s ease;
+        }
+
+        @keyframes fadeIn {
+
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pop {
+            animation: pop 0.18s ease;
+        }
+
+        @keyframes pop {
+
+            0% {
+                transform: scale(0.92);
+            }
+
+            70% {
+                transform: scale(1.04);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-height: 650px) {
+
+            .training-top {
+                padding-top: 65px;
+            }
+
+            .word {
+                font-size: 38px;
+            }
+
+            .answer-buttons {
+                width: min(65vw, 240px);
+                gap: 12px;
+            }
+
+            .answer-button {
+                border-radius: 20px;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         HOME
+    ========================= -->
+
+    <section
+        id="homeScreen"
+        class="screen active"
+    >
+
+        <div class="home-content">
+
+            <div class="home-title">
+                ЕГЭ Русский
+            </div>
+
+            <div class="home-subtitle">
+                Тренажёр для подготовки к экзамену
+            </div>
+
+            <button
+                class="glass-button start-button"
+                id="startTrainingButton"
+            >
+                📚 Начать тренировку
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         TOPICS
+    ========================= -->
+
+    <section
+        id="topicsScreen"
+        class="screen"
+    >
+
+        <button
+            class="glass-button back-button"
+            id="topicsBackButton"
+            aria-label="Назад"
+        >
+            &lt;
+        </button>
+
+
+        <div class="topics-title">
+            Темы
+        </div>
+
+
+        <div class="topics-list">
+
+            <button
+                class="glass-button topic-button"
+                id="prePriTopic"
+            >
+                📚 Приставка ПРЕ- и ПРИ-
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                📝 Ударения
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                🔤 Правописание НЕ
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                📖 Лексические нормы
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                ✏️ Грамматические нормы
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         TRAINING
+    ========================= -->
+
+    <section
+        id="trainingScreen"
+        class="screen"
+    >
+
+
+        <button
+            class="glass-button back-button"
+            id="trainingBackButton"
+            aria-label="Назад"
+        >
+            &lt;
+        </button>
+
+
+        <!-- СЧЁТЧИК -->
+
+        <div class="stats">
+
+            <div
+                class="stat correct"
+                id="correctStat"
+            >
+                Верно: 0
+            </div>
+
+            <div
+                class="stat wrong"
+                id="wrongStat"
+            >
+                Неверно: 0
+            </div>
+
+            <div
+                class="stat total"
+                id="totalStat"
+            >
+                Всего: 0
+            </div>
+
+        </div>
+
+
+        <!-- ВЕРХ -->
+
+        <div class="training-top">
+
+            <div
+                class="word-area"
+                id="wordArea"
+            >
+
+                <div
+                    class="word"
+                    id="word"
+                >
+                    пр_красный
+                </div>
+
+
+                <div
+                    class="result"
+                    id="result"
+                >
+
+                    <div
+                        class="result-label"
+                        id="resultLabel"
+                    ></div>
+
+                    <div
+                        class="result-word"
+                        id="resultWord"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- НИЗ -->
+
+        <div class="training-bottom">
+
+            <div class="answer-buttons">
+
+                <button
+                    class="glass-button answer-button"
+                    data-letter="е"
+                    id="buttonE"
+                >
+                    Е
+                </button>
+
+                <button
+                    class="glass-button answer-button"
+                    data-letter="и"
+                    id="buttonI"
+                >
+                    И
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+<script>
+
+    /* =========================================================
+       TELEGRAM
+    ========================================================= */
+
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+    tg.expand();
+
+
+    /* =========================================================
+       BACKEND
+       
+       ПОКА ОСТАВЛЯЕМ ЗАГЛУШКУ.
+       
+       Когда сделаем backend, сюда поставим его адрес:
+       
+       const API_URL = "https://example.com/wrong-answer";
+       
+       ========================================================= */
+
+    const API_URL = "";
+
+
+    /* =========================================================
+       СЛОВА
+       ========================================================= */
+
+    const words = [
+        {
+            "before": "пр",
+            "after": "амбула",
+            "correct": "е",
+            "full": "преамбула"
+        },
+        {
+            "before": "пр",
+            "after": "валировать",
+            "correct": "е",
+            "full": "превалировать"
+        },
+        {
+            "before": "пр",
+            "after": "вентивный",
+            "correct": "е",
+            "full": "превентивный"
+        },
+        {
+            "before": "пр",
+            "after": "взойти",
+            "correct": "е",
+            "full": "превзойти"
+        },
+        {
+            "before": "пр",
+            "after": "возмочь",
+            "correct": "е",
+            "full": "превозмочь"
+        },
+        {
+            "before": "пр",
+            "after": "возносить",
+            "correct": "е",
+            "full": "превозносить"
+        },
+        {
+            "before": "пр",
+            "after": "вратить",
+            "correct": "е",
+            "full": "превратить"
+        },
+        {
+            "before": "пр",
+            "after": "грешение",
+            "correct": "е",
+            "full": "прегрешение"
+        },
+        {
+            "before": "пр",
+            "after": "держащая",
+            "correct": "е",
+            "full": "предержащая"
+        },
+        {
+            "before": "пр",
+            "after": "зент",
+            "correct": "е",
+            "full": "презент"
+        },
+        {
+            "before": "пр",
+            "after": "зидент",
+            "correct": "е",
+            "full": "президент"
+        },
+        {
+            "before": "пр",
+            "after": "зидиум",
+            "correct": "е",
+            "full": "президиум"
+        },
+        {
+            "before": "пр",
+            "after": "имущество",
+            "correct": "е",
+            "full": "преимущество"
+        },
+        {
+            "before": "пр",
+            "after": "кратить",
+            "correct": "е",
+            "full": "прекратить"
+        },
+        {
+            "before": "пр",
+            "after": "людия",
+            "correct": "е",
+            "full": "прелюдия"
+        },
+        {
+            "before": "пр",
+            "after": "минуть",
+            "correct": "е",
+            "full": "преминуть"
+        },
+        {
+            "before": "пр",
+            "after": "мировать",
+            "correct": "е",
+            "full": "премировать"
+        },
+        {
+            "before": "пр",
+            "after": "мьера",
+            "correct": "е",
+            "full": "премьера"
+        },
+        {
+            "before": "пр",
+            "after": "небрежение",
+            "correct": "е",
+            "full": "пренебрежение"
+        },
+        {
+            "before": "пр",
+            "after": "образовать",
+            "correct": "е",
+            "full": "преобразовать"
+        },
+        {
+            "before": "пр",
+            "after": "одолеть",
+            "correct": "е",
+            "full": "преодолеть"
+        },
+        {
+            "before": "пр",
+            "after": "пинания",
+            "correct": "е",
+            "full": "препинания"
+        },
+        {
+            "before": "пр",
+            "after": "пираться",
+            "correct": "е",
+            "full": "препираться"
+        },
+        {
+            "before": "пр",
+            "after": "подавать",
+            "correct": "е",
+            "full": "преподавать"
+        },
+        {
+            "before": "пр",
+            "after": "поднести",
+            "correct": "е",
+            "full": "преподнести"
+        },
+        {
+            "before": "пр",
+            "after": "подношение",
+            "correct": "е",
+            "full": "преподношение"
+        },
+        {
+            "before": "пр",
+            "after": "поручить",
+            "correct": "е",
+            "full": "препоручить"
+        },
+        {
+            "before": "пр",
+            "after": "пятствие",
+            "correct": "е",
+            "full": "препятствие"
+        },
+        {
+            "before": "пр",
+            "after": "клоняться",
+            "correct": "е",
+            "full": "преклоняться"
+        },
+        {
+            "before": "пр",
+            "after": "рогатива",
+            "correct": "е",
+            "full": "прерогатива"
+        },
+        {
+            "before": "пр",
+            "after": "следовать",
+            "correct": "е",
+            "full": "преследовать"
+        },
+        {
+            "before": "пр",
+            "after": "словутый",
+            "correct": "е",
+            "full": "пресловутый"
+        },
+        {
+            "before": "пр",
+            "after": "смыкающийся",
+            "correct": "е",
+            "full": "пресмыкающийся"
+        },
+        {
+            "before": "пр",
+            "after": "стиж",
+            "correct": "е",
+            "full": "престиж"
+        },
+        {
+            "before": "пр",
+            "after": "тендент",
+            "correct": "е",
+            "full": "претендент"
+        },
+        {
+            "before": "пр",
+            "after": "ткновение",
+            "correct": "е",
+            "full": "преткновение"
+        },
+        {
+            "before": "пр",
+            "after": "успевать",
+            "correct": "е",
+            "full": "преуспевать"
+        },
+        {
+            "before": "пр",
+            "after": "фект",
+            "correct": "е",
+            "full": "префект"
+        },
+        {
+            "before": "пр",
+            "after": "феранс",
+            "correct": "е",
+            "full": "преферанс"
+        },
+        {
+            "before": "пр",
+            "after": "цедент",
+            "correct": "е",
+            "full": "прецедент"
+        },
+        {
+            "before": "пр",
+            "after": "творить",
+            "correct": "е",
+            "full": "претворить"
+        },
+        {
+            "before": "пр",
+            "after": "твориться",
+            "correct": "е",
+            "full": "претвориться"
+        },
+        {
+            "before": "пр",
+            "after": "ступить",
+            "correct": "е",
+            "full": "преступить"
+        },
+        {
+            "before": "пр",
+            "after": "дать",
+            "correct": "е",
+            "full": "предать"
+        },
+        {
+            "before": "пр",
+            "after": "дание",
+            "correct": "е",
+            "full": "предание"
+        },
+        {
+            "before": "пр",
+            "after": "емник",
+            "correct": "е",
+            "full": "преемник"
+        },
+        {
+            "before": "пр",
+            "after": "ходящий",
+            "correct": "е",
+            "full": "преходящий"
+        },
+        {
+            "before": "пр",
+            "after": "вратный",
+            "correct": "е",
+            "full": "превратный"
+        },
+        {
+            "before": "пр",
+            "after": "дел",
+            "correct": "е",
+            "full": "предел"
+        },
+        {
+            "before": "пр",
+            "after": "зирать",
+            "correct": "е",
+            "full": "презирать"
+        },
+        {
+            "before": "пр",
+            "after": "терпеть",
+            "correct": "е",
+            "full": "претерпеть"
+        },
+        {
+            "before": "пр",
+            "after": "тензия",
+            "correct": "е",
+            "full": "претензия"
+        },
+        {
+            "before": "пр",
+            "after": "зентация",
+            "correct": "е",
+            "full": "презентация"
+        },
+        {
+            "before": "пр",
+            "after": "фектура",
+            "correct": "е",
+            "full": "префектура"
+        },
+        {
+            "before": "пр",
+            "after": "восходный",
+            "correct": "е",
+            "full": "превосходный"
+        },
+        {
+            "before": "пр",
+            "after": "увеличить",
+            "correct": "е",
+            "full": "преувеличить"
+        },
+        {
+            "before": "пр",
+            "after": "уменьшить",
+            "correct": "е",
+            "full": "преуменьшить"
+        },
+        {
+            "before": "пр",
+            "after": "избыток",
+            "correct": "е",
+            "full": "преизбыток"
+        },
+        {
+            "before": "пр",
+            "after": "добрый",
+            "correct": "е",
+            "full": "предобрый"
+        },
+        {
+            "before": "пр",
+            "after": "мудрый",
+            "correct": "е",
+            "full": "премудрый"
+        },
+        {
+            "before": "пр",
+            "after": "неприятный",
+            "correct": "е",
+            "full": "пренеприятный"
+        },
+        {
+            "before": "пр",
+            "after": "старелый",
+            "correct": "е",
+            "full": "престарелый"
+        },
+        {
+            "before": "пр",
+            "after": "градить",
+            "correct": "е",
+            "full": "преградить"
+        },
+        {
+            "before": "пр",
+            "after": "рвать",
+            "correct": "е",
+            "full": "прервать"
+        },
+        {
+            "before": "пр",
+            "after": "ломить",
+            "correct": "е",
+            "full": "преломить"
+        },
+        {
+            "before": "пр",
+            "after": "сытиться",
+            "correct": "е",
+            "full": "пресытиться"
+        },
+        {
+            "before": "пр",
+            "after": "льстить",
+            "correct": "е",
+            "full": "прельстить"
+        },
+        {
+            "before": "пр",
+            "after": "кословить",
+            "correct": "е",
+            "full": "прекословить"
+        },
+        {
+            "before": "пр",
+            "after": "пона",
+            "correct": "е",
+            "full": "препона"
+        },
+        {
+            "before": "пр",
+            "after": "стол",
+            "correct": "е",
+            "full": "престол"
+        },
+        {
+            "before": "пр",
+            "after": "терпевать",
+            "correct": "е",
+            "full": "претерпевать"
+        },
+        {
+            "before": "пр",
+            "after": "ступление",
+            "correct": "е",
+            "full": "преступление"
+        },
+        {
+            "before": "пр",
+            "after": "сечь",
+            "correct": "е",
+            "full": "пресечь"
+        },
+        {
+            "before": "пр",
+            "after": "увеличение",
+            "correct": "е",
+            "full": "преувеличение"
+        },
+        {
+            "before": "пр",
+            "after": "уменьшать",
+            "correct": "е",
+            "full": "преуменьшать"
+        },
+        {
+            "before": "пр",
+            "after": "уменьшать",
+            "correct": "и",
+            "full": "приуменьшать"
+        },
+        {
+            "before": "пр",
+            "after": "обладать",
+            "correct": "е",
+            "full": "преобладать"
+        },
+        {
+            "before": "пр",
+            "after": "обладание",
+            "correct": "е",
+            "full": "преобладание"
+        },
+        {
+            "before": "пр",
+            "after": "исполниться",
+            "correct": "е",
+            "full": "преисполниться"
+        },
+        {
+            "before": "пр",
+            "after": "исподняя",
+            "correct": "е",
+            "full": "преисподняя"
+        },
+        {
+            "before": "пр",
+            "after": "емственный",
+            "correct": "е",
+            "full": "преемственный"
+        },
+        {
+            "before": "пр",
+            "after": "емственность",
+            "correct": "е",
+            "full": "преемственность"
+        },
+        {
+            "before": "пр",
+            "after": "емница",
+            "correct": "е",
+            "full": "преемница"
+        },
+        {
+            "before": "пр",
+            "after": "емство",
+            "correct": "е",
+            "full": "преемство"
+        },
+        {
+            "before": "пр",
+            "after": "ображение",
+            "correct": "е",
+            "full": "преображение"
+        },
+        {
+            "before": "пр",
+            "after": "образование",
+            "correct": "е",
+            "full": "преобразование"
+        },
+        {
+            "before": "пр",
+            "after": "образователь",
+            "correct": "е",
+            "full": "преобразователь"
+        },
+        {
+            "before": "пр",
+            "after": "дшествовать",
+            "correct": "е",
+            "full": "предшествовать"
+        },
+        {
+            "before": "пр",
+            "after": "дшествующий",
+            "correct": "е",
+            "full": "предшествующий"
+        },
+        {
+            "before": "пр",
+            "after": "исполненный",
+            "correct": "е",
+            "full": "преисполненный"
+        },
+        {
+            "before": "пр",
+            "after": "увеличенный",
+            "correct": "е",
+            "full": "преувеличенный"
+        },
+        {
+            "before": "пр",
+            "after": "огромный",
+            "correct": "е",
+            "full": "преогромный"
+        },
+        {
+            "before": "пр",
+            "after": "большой",
+            "correct": "е",
+            "full": "пребольшой"
+        },
+        {
+            "before": "пр",
+            "after": "горок",
+            "correct": "е",
+            "full": "прегорок"
+        },
+        {
+            "before": "пр",
+            "after": "проводить",
+            "correct": "е",
+            "full": "препроводить"
+        },
+        {
+            "before": "пр",
+            "after": "подобный",
+            "correct": "е",
+            "full": "преподобный"
+        },
+        {
+            "before": "пр",
+            "after": "парировать",
+            "correct": "е",
+            "full": "препарировать"
+        },
+        {
+            "before": "пр",
+            "after": "увеличивать",
+            "correct": "е",
+            "full": "преувеличивать"
+        },
+        {
+            "before": "пр",
+            "after": "ображать",
+            "correct": "е",
+            "full": "преображать"
+        },
+        {
+            "before": "пр",
+            "after": "освященный",
+            "correct": "е",
+            "full": "преосвященный"
+        },
+        {
+            "before": "пр",
+            "after": "секать",
+            "correct": "е",
+            "full": "пресекать"
+        },
+        {
+            "before": "пр",
+            "after": "сыщаться",
+            "correct": "е",
+            "full": "пресыщаться"
+        },
+        {
+            "before": "пр",
+            "after": "сыщенный",
+            "correct": "е",
+            "full": "пресыщенный"
+        },
+        {
+            "before": "пр",
+            "after": "небрегать",
+            "correct": "е",
+            "full": "пренебрегать"
+        },
+        {
+            "before": "пр",
+            "after": "небречь",
+            "correct": "е",
+            "full": "пренебречь"
+        },
+        {
+            "before": "пр",
+            "after": "небрежительный",
+            "correct": "е",
+            "full": "пренебрежительный"
+        },
+        {
+            "before": "пр",
+            "after": "ходящесть",
+            "correct": "е",
+            "full": "преходящесть"
+        },
+        {
+            "before": "пр",
+            "after": "зумпция",
+            "correct": "е",
+            "full": "презумпция"
+        },
+        {
+            "before": "пр",
+            "after": "рия",
+            "correct": "е",
+            "full": "прерия"
+        },
+        {
+            "before": "пр",
+            "after": "лат",
+            "correct": "е",
+            "full": "прелат"
+        },
+        {
+            "before": "пр",
+            "after": "восходство",
+            "correct": "е",
+            "full": "превосходство"
+        },
+        {
+            "before": "пр",
+            "after": "бор",
+            "correct": "и",
+            "full": "прибор"
+        },
+        {
+            "before": "пр",
+            "after": "ватизация",
+            "correct": "и",
+            "full": "приватизация"
+        },
+        {
+            "before": "пр",
+            "after": "вередливый",
+            "correct": "и",
+            "full": "привередливый"
+        },
+        {
+            "before": "пр",
+            "after": "вет",
+            "correct": "и",
+            "full": "привет"
+        },
+        {
+            "before": "пр",
+            "after": "вилегия",
+            "correct": "и",
+            "full": "привилегия"
+        },
+        {
+            "before": "пр",
+            "after": "выкать",
+            "correct": "и",
+            "full": "привыкать"
+        },
+        {
+            "before": "пр",
+            "after": "гласить",
+            "correct": "и",
+            "full": "пригласить"
+        },
+        {
+            "before": "пр",
+            "after": "годиться",
+            "correct": "и",
+            "full": "пригодиться"
+        },
+        {
+            "before": "пр",
+            "after": "гожий",
+            "correct": "и",
+            "full": "пригожий"
+        },
+        {
+            "before": "пр",
+            "after": "готовить",
+            "correct": "и",
+            "full": "приготовить"
+        },
+        {
+            "before": "пр",
+            "after": "дираться",
+            "correct": "и",
+            "full": "придираться"
+        },
+        {
+            "before": "пр",
+            "after": "думать",
+            "correct": "и",
+            "full": "придумать"
+        },
+        {
+            "before": "пр",
+            "after": "есться",
+            "correct": "и",
+            "full": "приесться"
+        },
+        {
+            "before": "пр",
+            "after": "звание",
+            "correct": "и",
+            "full": "призвание"
+        },
+        {
+            "before": "пр",
+            "after": "казать",
+            "correct": "и",
+            "full": "приказать"
+        },
+        {
+            "before": "пр",
+            "after": "ключение",
+            "correct": "и",
+            "full": "приключение"
+        },
+        {
+            "before": "пр",
+            "after": "лежный",
+            "correct": "и",
+            "full": "прилежный"
+        },
+        {
+            "before": "пр",
+            "after": "личный",
+            "correct": "и",
+            "full": "приличный"
+        },
+        {
+            "before": "пр",
+            "after": "мадонна",
+            "correct": "и",
+            "full": "примадонна"
+        },
+        {
+            "before": "пр",
+            "after": "мер",
+            "correct": "и",
+            "full": "пример"
+        },
+        {
+            "before": "пр",
+            "after": "митивный",
+            "correct": "и",
+            "full": "примитивный"
+        },
+        {
+            "before": "пр",
+            "after": "нцип",
+            "correct": "и",
+            "full": "принцип"
+        },
+        {
+            "before": "пр",
+            "after": "обрести",
+            "correct": "и",
+            "full": "приобрести"
+        },
+        {
+            "before": "пр",
+            "after": "оритет",
+            "correct": "и",
+            "full": "приоритет"
+        },
+        {
+            "before": "пр",
+            "after": "скорбный",
+            "correct": "и",
+            "full": "прискорбный"
+        },
+        {
+            "before": "пр",
+            "after": "смотреться",
+            "correct": "и",
+            "full": "присмотреться"
+        },
+        {
+            "before": "пр",
+            "after": "способить",
+            "correct": "и",
+            "full": "приспособить"
+        },
+        {
+            "before": "пр",
+            "after": "страстный",
+            "correct": "и",
+            "full": "пристрастный"
+        },
+        {
+            "before": "пр",
+            "after": "твориться",
+            "correct": "и",
+            "full": "притвориться"
+        },
+        {
+            "before": "пр",
+            "after": "украсить",
+            "correct": "и",
+            "full": "приукрасить"
+        },
+        {
+            "before": "пр",
+            "after": "чина",
+            "correct": "и",
+            "full": "причина"
+        },
+        {
+            "before": "пр",
+            "after": "чудливый",
+            "correct": "и",
+            "full": "причудливый"
+        },
+        {
+            "before": "пр",
+            "after": "ютить",
+            "correct": "и",
+            "full": "приютить"
+        },
+        {
+            "before": "пр",
+            "after": "ятель",
+            "correct": "и",
+            "full": "приятель"
+        },
+        {
+            "before": "пр",
+            "after": "ятный",
+            "correct": "и",
+            "full": "приятный"
+        },
+        {
+            "before": "пр",
+            "after": "ёмник",
+            "correct": "и",
+            "full": "приёмник"
+        },
+        {
+            "before": "пр",
+            "after": "умножить",
+            "correct": "и",
+            "full": "приумножить"
+        },
+        {
+            "before": "пр",
+            "after": "ватный",
+            "correct": "и",
+            "full": "приватный"
+        },
+        {
+            "before": "пр",
+            "after": "сяга",
+            "correct": "и",
+            "full": "присяга"
+        },
+        {
+            "before": "пр",
+            "after": "тязание",
+            "correct": "и",
+            "full": "притязание"
+        },
+        {
+            "before": "пр",
+            "after": "тязать",
+            "correct": "и",
+            "full": "притязать"
+        },
+        {
+            "before": "пр",
+            "after": "рода",
+            "correct": "и",
+            "full": "природа"
+        },
+        {
+            "before": "пр",
+            "after": "чуда",
+            "correct": "и",
+            "full": "причуда"
+        },
+        {
+            "before": "пр",
+            "after": "верженец",
+            "correct": "и",
+            "full": "приверженец"
+        },
+        {
+            "before": "пр",
+            "after": "сутствовать",
+            "correct": "и",
+            "full": "присутствовать"
+        },
+        {
+            "before": "пр",
+            "after": "урочить",
+            "correct": "и",
+            "full": "приурочить"
+        },
+        {
+            "before": "пр",
+            "after": "страстие",
+            "correct": "и",
+            "full": "пристрастие"
+        },
+        {
+            "before": "пр",
+            "after": "бавка",
+            "correct": "и",
+            "full": "прибавка"
+        },
+        {
+            "before": "пр",
+            "after": "видение",
+            "correct": "и",
+            "full": "привидение"
+        },
+        {
+            "before": "пр",
+            "after": "скорбие",
+            "correct": "и",
+            "full": "прискорбие"
+        },
+        {
+            "before": "пр",
+            "after": "станище",
+            "correct": "и",
+            "full": "пристанище"
+        },
+        {
+            "before": "пр",
+            "after": "обретение",
+            "correct": "и",
+            "full": "приобретение"
+        },
+        {
+            "before": "пр",
+            "after": "ёмный",
+            "correct": "и",
+            "full": "приёмный"
+        },
+        {
+            "before": "пр",
+            "after": "ставить",
+            "correct": "и",
+            "full": "приставить"
+        },
+        {
+            "before": "пр",
+            "after": "баутка",
+            "correct": "и",
+            "full": "прибаутка"
+        },
+        {
+            "before": "пр",
+            "after": "стойный",
+            "correct": "и",
+            "full": "пристойный"
+        },
+        {
+            "before": "пр",
+            "after": "корнуть",
+            "correct": "и",
+            "full": "прикорнуть"
+        },
+        {
+            "before": "пр",
+            "after": "теснять",
+            "correct": "и",
+            "full": "притеснять"
+        },
+        {
+            "before": "пр",
+            "after": "волье",
+            "correct": "и",
+            "full": "приволье"
+        },
+        {
+            "before": "пр",
+            "after": "цел",
+            "correct": "и",
+            "full": "прицел"
+        },
+        {
+            "before": "пр",
+            "after": "мета",
+            "correct": "и",
+            "full": "примета"
+        },
+        {
+            "before": "пр",
+            "after": "сниться",
+            "correct": "и",
+            "full": "присниться"
+        },
+        {
+            "before": "пр",
+            "after": "судить",
+            "correct": "и",
+            "full": "присудить"
+        },
+        {
+            "before": "пр",
+            "after": "мат",
+            "correct": "и",
+            "full": "примат"
+        },
+        {
+            "before": "пр",
+            "after": "годный",
+            "correct": "и",
+            "full": "пригодный"
+        },
+        {
+            "before": "пр",
+            "after": "умножение",
+            "correct": "и",
+            "full": "приумножение"
+        },
+        {
+            "before": "пр",
+            "after": "умножать",
+            "correct": "и",
+            "full": "приумножать"
+        },
+        {
+            "before": "пр",
+            "after": "общить",
+            "correct": "и",
+            "full": "приобщить"
+        },
+        {
+            "before": "пр",
+            "after": "общение",
+            "correct": "и",
+            "full": "приобщение"
+        },
+        {
+            "before": "пр",
+            "after": "людный",
+            "correct": "и",
+            "full": "прилюдный"
+        },
+        {
+            "before": "пр",
+            "after": "чёска",
+            "correct": "и",
+            "full": "причёска"
+        },
+        {
+            "before": "пр",
+            "after": "клеить",
+            "correct": "и",
+            "full": "приклеить"
+        },
+        {
+            "before": "пр",
+            "after": "озёрный",
+            "correct": "и",
+            "full": "приозёрный"
+        },
+        {
+            "before": "пр",
+            "after": "дворный",
+            "correct": "и",
+            "full": "придворный"
+        },
+        {
+            "before": "пр",
+            "after": "вокзальный",
+            "correct": "и",
+            "full": "привокзальный"
+        },
+        {
+            "before": "пр",
+            "after": "горок",
+            "correct": "и",
+            "full": "пригорок"
+        },
+        {
+            "before": "пр",
+            "after": "тихнуть",
+            "correct": "и",
+            "full": "притихнуть"
+        },
+        {
+            "before": "пр",
+            "after": "норовиться",
+            "correct": "и",
+            "full": "приноровиться"
+        },
+        {
+            "before": "пр",
+            "after": "двинуть",
+            "correct": "и",
+            "full": "придвинуть"
+        },
+        {
+            "before": "пр",
+            "after": "делать",
+            "correct": "и",
+            "full": "приделать"
+        },
+        {
+            "before": "пр",
+            "after": "писать",
+            "correct": "и",
+            "full": "приписать"
+        },
+        {
+            "before": "пр",
+            "after": "строить",
+            "correct": "и",
+            "full": "пристроить"
+        },
+        {
+            "before": "пр",
+            "after": "открыть",
+            "correct": "и",
+            "full": "приоткрыть"
+        },
+        {
+            "before": "пр",
+            "after": "поднять",
+            "correct": "и",
+            "full": "приподнять"
+        },
+        {
+            "before": "пр",
+            "after": "сесть",
+            "correct": "и",
+            "full": "присесть"
+        },
+        {
+            "before": "пр",
+            "after": "ручить",
+            "correct": "и",
+            "full": "приручить"
+        },
+        {
+            "before": "пр",
+            "after": "стегнуть",
+            "correct": "и",
+            "full": "пристегнуть"
+        },
+        {
+            "before": "пр",
+            "after": "крепить",
+            "correct": "и",
+            "full": "прикрепить"
+        },
+        {
+            "before": "пр",
+            "after": "коснуться",
+            "correct": "и",
+            "full": "прикоснуться"
+        },
+        {
+            "before": "пр",
+            "after": "жаться",
+            "correct": "и",
+            "full": "прижаться"
+        },
+        {
+            "before": "пр",
+            "after": "брежный",
+            "correct": "и",
+            "full": "прибрежный"
+        },
+        {
+            "before": "пр",
+            "after": "морский",
+            "correct": "и",
+            "full": "приморский"
+        },
+        {
+            "before": "пр",
+            "after": "уральский",
+            "correct": "и",
+            "full": "приуральский"
+        },
+        {
+            "before": "пр",
+            "after": "горный",
+            "correct": "и",
+            "full": "пригорный"
+        },
+        {
+            "before": "пр",
+            "after": "усадебный",
+            "correct": "и",
+            "full": "приусадебный"
+        },
+        {
+            "before": "пр",
+            "after": "граничный",
+            "correct": "и",
+            "full": "приграничный"
+        },
+        {
+            "before": "пр",
+            "after": "дорожный",
+            "correct": "и",
+            "full": "придорожный"
+        },
+        {
+            "before": "пр",
+            "after": "школьный",
+            "correct": "и",
+            "full": "пришкольный"
+        },
+        {
+            "before": "пр",
+            "after": "открытый",
+            "correct": "и",
+            "full": "приоткрытый"
+        },
+        {
+            "before": "пр",
+            "after": "поднятый",
+            "correct": "и",
+            "full": "приподнятый"
+        },
+        {
+            "before": "пр",
+            "after": "соединить",
+            "correct": "и",
+            "full": "присоединить"
+        },
+        {
+            "before": "пр",
+            "after": "соединение",
+            "correct": "и",
+            "full": "присоединение"
+        },
+        {
+            "before": "пр",
+            "after": "лагать",
+            "correct": "и",
+            "full": "прилагать"
+        },
+        {
+            "before": "пр",
+            "after": "ложить",
+            "correct": "и",
+            "full": "приложить"
+        },
+        {
+            "before": "пр",
+            "after": "кладывать",
+            "correct": "и",
+            "full": "прикладывать"
+        },
+        {
+            "before": "пр",
+            "after": "тронуться",
+            "correct": "и",
+            "full": "притронуться"
+        },
+        {
+            "before": "пр",
+            "after": "жизненный",
+            "correct": "и",
+            "full": "прижизненный"
+        },
+        {
+            "before": "пр",
+            "after": "писка",
+            "correct": "и",
+            "full": "приписка"
+        },
+        {
+            "before": "пр",
+            "after": "бавить",
+            "correct": "и",
+            "full": "прибавить"
+        },
+        {
+            "before": "пр",
+            "after": "быть",
+            "correct": "и",
+            "full": "прибыть"
+        },
+        {
+            "before": "пр",
+            "after": "бывать",
+            "correct": "и",
+            "full": "прибывать"
+        },
+        {
+            "before": "пр",
+            "after": "внести",
+            "correct": "и",
+            "full": "привнести"
+        },
+        {
+            "before": "пр",
+            "after": "беречь",
+            "correct": "и",
+            "full": "приберечь"
+        },
+        {
+            "before": "пр",
+            "after": "глядеться",
+            "correct": "и",
+            "full": "приглядеться"
+        },
+        {
+            "before": "пр",
+            "after": "слушиваться",
+            "correct": "и",
+            "full": "прислушиваться"
+        },
+        {
+            "before": "пр",
+            "after": "глядеть",
+            "correct": "и",
+            "full": "приглядеть"
+        },
+        {
+            "before": "пр",
+            "after": "смотреть",
+            "correct": "и",
+            "full": "присмотреть"
+        },
+        {
+            "before": "пр",
+            "after": "глядывать",
+            "correct": "и",
+            "full": "приглядывать"
+        },
+        {
+            "before": "пр",
+            "after": "остановить",
+            "correct": "и",
+            "full": "приостановить"
+        },
+        {
+            "before": "пр",
+            "after": "остановиться",
+            "correct": "и",
+            "full": "приостановиться"
+        },
+        {
+            "before": "пр",
+            "after": "отстать",
+            "correct": "и",
+            "full": "приотстать"
+        },
+        {
+            "before": "пр",
+            "after": "отстранить",
+            "correct": "и",
+            "full": "приотстранить"
+        },
+        {
+            "before": "пр",
+            "after": "низить",
+            "correct": "и",
+            "full": "принизить"
+        },
+        {
+            "before": "пр",
+            "after": "общиться",
+            "correct": "и",
+            "full": "приобщиться"
+        },
+        {
+            "before": "пр",
+            "after": "уроченный",
+            "correct": "и",
+            "full": "приуроченный"
+        },
+        {
+            "before": "пр",
+            "after": "ступить",
+            "correct": "и",
+            "full": "приступить"
+        },
+        {
+            "before": "пр",
+            "after": "ступать",
+            "correct": "и",
+            "full": "приступать"
+        },
+        {
+            "before": "пр",
+            "after": "мирить",
+            "correct": "и",
+            "full": "примирить"
+        },
+        {
+            "before": "пр",
+            "after": "мириться",
+            "correct": "и",
+            "full": "примириться"
+        },
+        {
+            "before": "пр",
+            "after": "творить",
+            "correct": "и",
+            "full": "притворить"
+        },
+        {
+            "before": "пр",
+            "after": "дел",
+            "correct": "и",
+            "full": "придел"
+        },
+        {
+            "before": "пр",
+            "after": "вратник",
+            "correct": "и",
+            "full": "привратник"
+        },
+        {
+            "before": "пр",
+            "after": "ставиться",
+            "correct": "е",
+            "full": "преставиться"
+        },
+        {
+            "before": "пр",
+            "after": "ложиться",
+            "correct": "и",
+            "full": "приложиться"
+        },
+        {
+            "before": "пр",
+            "after": "ходящий",
+            "correct": "и",
+            "full": "приходящий"
+        },
+        {
+            "before": "пр",
+            "after": "терпеться",
+            "correct": "и",
+            "full": "притерпеться"
+        },
+        {
+            "before": "пр",
+            "after": "творяться",
+            "correct": "и",
+            "full": "притворяться"
+        },
+        {
+            "before": "пр",
+            "after": "умолкнуть",
+            "correct": "и",
+            "full": "приумолкнуть"
+        }
+    ];
+
+
+    /* =========================================================
+       СОСТОЯНИЕ ТРЕНИРОВКИ
+       ========================================================= */
+
+    let correctCount = 0;
+
+    let wrongCount = 0;
+
+    /*
+       Слова, которые ещё не были правильно решены.
+    */
+
+    let activeWords = [];
+
+
+    /*
+       Очередь отложенных слов.
+
+       Каждый объект:
+
+       {
+           word: слово,
+           delay: сколько других слов
+                  нужно пройти перед возвратом
+       }
+    */
+
+    let delayedWords = [];
+
+
+    let currentWord = null;
+
+    let answerLocked = false;
+
+    let currentRoundNumber = 0;
+
+
+    /* =========================================================
+       DOM
+       ========================================================= */
+
+    const homeScreen =
+        document.getElementById("homeScreen");
+
+    const topicsScreen =
+        document.getElementById("topicsScreen");
+
+    const trainingScreen =
+        document.getElementById("trainingScreen");
+
+
+    const startTrainingButton =
+        document.getElementById("startTrainingButton");
+
+    const prePriTopic =
+        document.getElementById("prePriTopic");
+
+
+    const topicsBackButton =
+        document.getElementById("topicsBackButton");
+
+    const trainingBackButton =
+        document.getElementById("trainingBackButton");
+
+
+    const wordElement =
+        document.getElementById("word");
+
+    const resultElement =
+        document.getElementById("result");
+
+    const resultLabel =
+        document.getElementById("resultLabel");
+
+    const resultWord =
+        document.getElementById("resultWord");
+
+
+    const correctStat =
+        document.getElementById("correctStat");
+
+    const wrongStat =
+        document.getElementById("wrongStat");
+
+    const totalStat =
+        document.getElementById("totalStat");
+
+
+    const buttonE =
+        document.getElementById("buttonE");
+
+    const buttonI =
+        document.getElementById("buttonI");
+
+
+    const answerButtons = [
+        buttonE,
+        buttonI
+    ];
+
+
+    /* =========================================================
+       ЭКРАНЫ
+       ========================================================= */
+
+    function showScreen(screen) {
+
+        document
+            .querySelectorAll(".screen")
+            .forEach(item => {
+
+                item.classList.remove("active");
+
+            });
+
+        screen.classList.add("active");
+    }
+
+
+    /* =========================================================
+       HOME → TOPICS
+       ========================================================= */
+
+    startTrainingButton.addEventListener(
+        "click",
+        () => {
+
+            showScreen(topicsScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       TOPICS → HOME
+       ========================================================= */
+
+    topicsBackButton.addEventListener(
+        "click",
+        () => {
+
+            showScreen(homeScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       TRAINING → TOPICS
+       ========================================================= */
+
+    trainingBackButton.addEventListener(
+        "click",
+        () => {
+
+            /*
+               При выходе из тренировки
+               состояние текущей попытки сбрасывается.
+            */
+
+            answerLocked = true;
+
+            showScreen(topicsScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       НАЧАТЬ ПРЕ-/ПРИ-
+       ========================================================= */
+
+    prePriTopic.addEventListener(
+        "click",
+        () => {
+
+            startTraining();
+
+        }
+    );
+
+
+    /* =========================================================
+       НАЧАЛО ТРЕНИРОВКИ
+       ========================================================= */
+
+    function startTraining() {
+
+        correctCount = 0;
+
+        wrongCount = 0;
+
+        currentRoundNumber = 0;
+
+        answerLocked = false;
+
+
+        /*
+           Создаём независимую копию массива.
+
+           Исходный words никогда не изменяется.
+        */
+
+        activeWords = [...words];
+
+        delayedWords = [];
+
+
+        /*
+           Перемешиваем все слова.
+        */
+
+        shuffle(activeWords);
+
+
+        updateStats();
+
+        showScreen(trainingScreen);
+
+        nextWord();
+
+    }
+
+
+    /* =========================================================
+       RANDOM SHUFFLE
+       ========================================================= */
+
+    function shuffle(array) {
+
+        for (
+            let i = array.length - 1;
+            i > 0;
+            i--
+        ) {
+
+            const j =
+                Math.floor(Math.random() * (i + 1));
+
+            [
+                array[i],
+                array[j]
+            ] =
+            [
+                array[j],
+                array[i]
+            ];
+
+        }
+
+        return array;
+    }
+
+
+    /* =========================================================
+       СЛУЧАЙНОЕ ЧИСЛО 10–20
+       ========================================================= */
+
+    function randomDelay() {
+
+        return Math.floor(
+            Math.random() * 11
+        ) + 10;
+
+    }
+
+
+    /* =========================================================
+       СЛЕДУЮЩЕЕ СЛОВО
+       ========================================================= */
+
+    function nextWord() {
+
+        answerLocked = false;
+
+        resetButtons();
+
+        clearResult();
+
+
+        /*
+           Если больше нет активных слов
+           и нет отложенных —
+           тренировка закончена.
+        */
+
+        if (
+            activeWords.length === 0 &&
+            delayedWords.length === 0
+        ) {
+
+            finishTraining();
+
+            return;
+
+        }
+
+
+        currentRoundNumber++;
+
+
+        /*
+           Сначала уменьшаем задержку
+           у всех отложенных слов.
+        */
+
+        for (
+            const item of delayedWords
+        ) {
+
+            item.delay--;
+
+        }
+
+
+        /*
+           Слова, которым уже пора возвращаться.
+        */
+
+        const readyWords =
+            delayedWords.filter(
+                item => item.delay <= 0
+            );
+
+
+        /*
+           Удаляем готовые слова
+           из списка отложенных.
+        */
+
+        delayedWords =
+            delayedWords.filter(
+                item => item.delay > 0
+            );
+
+
+        let selectedWord = null;
+
+
+        /*
+           Если есть слово, которое пора вернуть,
+           выбираем одно случайное.
+        */
+
+        if (readyWords.length > 0) {
+
+            const randomIndex =
+                Math.floor(
+                    Math.random() *
+                    readyWords.length
+                );
+
+            selectedWord =
+                readyWords[randomIndex].word;
+
+
+            /*
+               Если остальные готовые слова
+               ещё не выбраны,
+               возвращаем их обратно
+               с нулевой задержкой.
+            */
+
+            for (
+                let i = 0;
+                i < readyWords.length;
+                i++
+            ) {
+
+                if (
+                    i !== randomIndex
+                ) {
+
+                    delayedWords.push({
+                        word: readyWords[i].word,
+                        delay: 0
+                    });
+
+                }
+
+            }
+
+        }
+
+
+        /*
+           Если готового слова нет,
+           берём случайное из активных.
+        */
+
+        if (!selectedWord) {
+
+            if (activeWords.length > 0) {
+
+                const randomIndex =
+                    Math.floor(
+                        Math.random() *
+                        activeWords.length
+                    );
+
+                selectedWord =
+                    activeWords[randomIndex];
+
+            }
+
+        }
+
+
+        /*
+           Теоретически selectedWord
+           всегда должен существовать.
+        */
+
+        if (!selectedWord) {
+
+            finishTraining();
+
+            return;
+
+        }
+
+
+        currentWord = selectedWord;
+
+        renderWord(currentWord);
+
+    }
+
+
+    /* =========================================================
+       ОТОБРАЖЕНИЕ СЛОВА
+       ========================================================= */
+
+    function renderWord(word) {
+
+        wordElement.classList.remove("fade-in");
+
+        void wordElement.offsetWidth;
+
+        wordElement.classList.add("fade-in");
+
+
+        wordElement.innerHTML =
+            `${escapeHtml(word.before)}<span class="missing">_</span>${escapeHtml(word.after)}`;
+    }
+
+
+    /* =========================================================
+       ОТВЕТ
+       ========================================================= */
+
+    answerButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    if (answerLocked) {
+                        return;
+                    }
+
+                    if (!currentWord) {
+                        return;
+                    }
+
+                    const selectedLetter =
+                        button.dataset.letter;
+
+                    checkAnswer(
+                        selectedLetter
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       ПРОВЕРКА
+       ========================================================= */
+
+    function checkAnswer(letter) {
+
+        answerLocked = true;
+
+
+        /*
+           Сразу вставляем выбранную букву.
+        */
+
+        wordElement.innerHTML =
+            `${escapeHtml(currentWord.before)}<span class="missing">${letter}</span>${escapeHtml(currentWord.after)}`;
+
+
+        const isCorrect =
+            letter === currentWord.correct;
+
+
+        /*
+           Находим кнопку правильного ответа.
+        */
+
+        const correctButton =
+            answerButtons.find(
+                button =>
+                    button.dataset.letter ===
+                    currentWord.correct
+            );
+
+
+        /*
+           Находим выбранную кнопку.
+        */
+
+        const selectedButton =
+            answerButtons.find(
+                button =>
+                    button.dataset.letter ===
+                    letter
+            );
+
+
+        if (isCorrect) {
+
+            /* =========================
+               ПРАВИЛЬНО
+            ========================= */
+
+            correctCount++;
+
+            updateStats();
+
+
+            selectedButton
+                ?.classList.add(
+                    "correct-answer"
+                );
+
+
+            /*
+               Удаляем слово навсегда
+               из текущего цикла.
+            */
+
+            removeFromActiveWords(
+                currentWord
+            );
+
+            removeFromDelayedWords(
+                currentWord
+            );
+
+
+            resultElement.className =
+                "result correct-result";
+
+            resultLabel.textContent =
+                "✓ Правильно";
+
+            resultWord.textContent =
+                currentWord.full;
+
+
+            setTimeout(
+                () => {
+
+                    nextWord();
+
+                },
+                1000
+            );
+
+        } else {
+
+            /* =========================
+               ОШИБКА
+            ========================= */
+
+            wrongCount++;
+
+            updateStats();
+
+
+            selectedButton
+                ?.classList.add(
+                    "wrong-answer"
+                );
+
+
+            correctButton
+                ?.classList.add(
+                    "correct-answer"
+                );
+
+
+            resultElement.className =
+                "result wrong-result";
+
+
+            resultLabel.textContent =
+                "правильное слово:";
+
+
+            resultWord.textContent =
+                currentWord.full;
+
+
+            /*
+               Слово остаётся незавершённым.
+
+               Откладываем его на 10–20
+               других слов.
+            */
+
+            removeFromActiveWords(
+                currentWord
+            );
+
+            removeFromDelayedWords(
+                currentWord
+            );
+
+
+            delayedWords.push({
+
+                word: currentWord,
+
+                delay: randomDelay()
+
+            });
+
+
+            /*
+               Отправляем ошибку backend.
+               
+               Важно:
+               fetch НЕ закрывает Mini App.
+            */
+
+            sendWrongAnswer(
+                currentWord.full
+            );
+
+
+            /*
+               Через одну секунду
+               переходим дальше.
+            */
+
+            setTimeout(
+                () => {
+
+                    nextWord();
+
+                },
+                1000
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ОТПРАВКА ОШИБКИ BACKEND
+       ========================================================= */
+
+    async function sendWrongAnswer(word) {
+
+        /*
+           Если backend пока не указан —
+           просто ничего не делаем.
+
+           Само приложение продолжает работать.
+        */
+
+        if (!API_URL) {
+
+            console.log(
+                "Backend пока не подключён:",
+                word
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            word: word,
+
+                            /*
+                               Telegram передаёт
+                               подписанные initData.
+
+                               Backend сможет проверить,
+                               что запрос действительно
+                               пришёл от Telegram.
+                            */
+
+                            initData:
+                                tg.initData
+
+                        })
+
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Backend error:",
+                    response.status
+                );
+
+                return;
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Ошибка отправлена:",
+                data
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Не удалось отправить ошибку:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       УДАЛИТЬ ИЗ ACTIVE
+    ========================================================= */
+
+    function removeFromActiveWords(word) {
+
+        activeWords =
+            activeWords.filter(
+                item =>
+                    item !== word
+            );
+
+    }
+
+
+    /* =========================================================
+       УДАЛИТЬ ИЗ DELAYED
+    ========================================================= */
+
+    function removeFromDelayedWords(word) {
+
+        delayedWords =
+            delayedWords.filter(
+                item =>
+                    item.word !== word
+            );
+
+    }
+
+
+    /* =========================================================
+       СТАТИСТИКА
+    ========================================================= */
+
+    function updateStats() {
+
+        correctStat.textContent =
+            `Верно: ${correctCount}`;
+
+
+        wrongStat.textContent =
+            `Неверно: ${wrongCount}`;
+
+
+        /*
+           Всего =
+           количество уникальных слов,
+           которые ещё не были решены правильно.
+
+           Поэтому при ошибке оно НЕ уменьшается.
+
+           При правильном ответе уменьшается.
+        */
+
+        const remaining =
+            activeWords.length +
+            delayedWords.length;
+
+
+        totalStat.textContent =
+            `Всего: ${remaining}`;
+
+    }
+
+
+    /* =========================================================
+       ВАЖНО:
+       После изменения delayedWords
+       статистику нужно обновить.
+    ========================================================= */
+
+    function updateRemainingStat() {
+
+        const remaining =
+            activeWords.length +
+            delayedWords.length;
+
+        totalStat.textContent =
+            `Всего: ${remaining}`;
+
+    }
+
+
+    /* =========================================================
+       РЕЗУЛЬТАТ
+    ========================================================= */
+
+    function clearResult() {
+
+        resultElement.className =
+            "result";
+
+        resultLabel.textContent =
+            "";
+
+        resultWord.textContent =
+            "";
+
+    }
+
+
+    /* =========================================================
+       КНОПКИ
+    ========================================================= */
+
+    function resetButtons() {
+
+        answerButtons.forEach(
+            button => {
+
+                button.classList.remove(
+                    "correct-answer",
+                    "wrong-answer",
+                    "disabled"
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       ЗАВЕРШЕНИЕ
+    ========================================================= */
+
+    function finishTraining() {
+
+        answerLocked = true;
+
+        resetButtons();
+
+
+        wordElement.textContent =
+            "🎉";
+
+
+        resultElement.className =
+            "result correct-result";
+
+
+        resultLabel.textContent =
+            "Тренировка завершена";
+
+
+        resultWord.textContent =
+            `Верно: ${correctCount} • Неверно: ${wrongCount}`;
+
+
+        updateStats();
+
+    }
+
+
+    /* =========================================================
+       HTML ESCAPE
+    ========================================================= */
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+    /* =========================================================
+       TELEGRAM THEME
+    ========================================================= */
+
+    if (
+        tg.themeParams &&
+        tg.themeParams.bg_color
+    ) {
+
+        /*
+           Ничего специально не меняем:
+           дизайн приложения остаётся
+           синим/белым.
+        */
+
+    }
+
+
+</script>
+
+</body>
+</html>
