@@ -14,113 +14,538 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #f4f5f7;
-            color: #111;
+            background: #f5f7fb;
+            color: #222;
         }
 
-        .app {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 30px 20px;
+        button {
+            font-family: inherit;
+        }
+
+        /* =========================
+           ГЛАВНЫЙ ЭКРАН
+        ========================= */
+
+        .screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .logo {
-            font-size: 55px;
-            text-align: center;
-            margin-top: 30px;
+            font-size: 60px;
+            margin-bottom: 15px;
         }
 
         h1 {
-            text-align: center;
-            font-size: 30px;
-            margin-bottom: 10px;
+            margin: 0;
+            font-size: 32px;
         }
 
         .description {
+            margin-top: 12px;
+            color: #666;
             text-align: center;
-            color: #777;
-            line-height: 1.5;
-            margin-bottom: 30px;
+            font-size: 17px;
         }
 
-        .start {
-            width: 100%;
-            padding: 18px;
+        .main-button {
+            margin-top: 30px;
+            width: min(400px, 90%);
+            height: 65px;
             border: none;
-            border-radius: 16px;
-            background: #2481cc;
+            border-radius: 18px;
+            background: #222;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
         }
 
         .stats {
             display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .stat {
-            flex: 1;
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
+            gap: 50px;
+            margin-top: 30px;
             text-align: center;
         }
 
-        .number {
-            font-size: 24px;
+        .stat-number {
+            font-size: 25px;
             font-weight: bold;
         }
 
-        .label {
+        .stat-label {
             color: #777;
             margin-top: 5px;
-            font-size: 14px;
+        }
+
+        /* =========================
+           ТЕМЫ
+        ========================= */
+
+        .topics-screen {
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .topics-title {
+            text-align: center;
+            font-size: 30px;
+            margin: 20px 0 30px;
+        }
+
+        .topic {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 15px;
+            padding: 22px;
+            border-radius: 18px;
+            border: none;
+            text-align: left;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .topic.active {
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .topic.disabled {
+            background: #e5e7eb;
+            color: #999;
+        }
+
+        .back-button {
+            display: block;
+            margin: 25px auto 0;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* =========================
+           ТРЕНАЖЁР
+        ========================= */
+
+        .training-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Верхние 50% */
+        .word-area {
+            height: 50vh;
+            min-height: 300px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+            padding: 20px;
+        }
+
+        .word {
+            font-size: 44px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .result {
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 16px;
+            color: #777;
+        }
+
+        .correct-word {
+            margin-top: 4px;
+            font-size: 21px;
+            font-weight: 600;
+        }
+
+        .letter.correct {
+            color: #20a464;
+        }
+
+        .letter.wrong {
+            color: #e53935;
+        }
+
+        /* Нижние 50% */
+        .buttons-area {
+            height: 50vh;
+            min-height: 300px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 15px;
+            padding: 25px;
+        }
+
+        .answer-button {
+            width: min(220px, 42vw);
+            height: 100px;
+
+            border: none;
+            border-radius: 24px;
+
+            background: white;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.12);
+
+            font-size: 38px;
+            font-weight: bold;
+
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .answer-button:active {
+            transform: scale(0.95);
+        }
+
+        .answer-button:disabled {
+            cursor: default;
+        }
+
+        /* =========================
+           ТЕЛЕФОН
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .word {
+                font-size: 38px;
+            }
+
+            .answer-button {
+                width: 43vw;
+                height: 90px;
+                font-size: 34px;
+            }
+
+            .buttons-area {
+                gap: 10px;
+                padding: 15px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- =========================
+     ГЛАВНЫЙ ЭКРАН
+========================= -->
+
+<div id="homeScreen" class="screen">
 
     <div class="logo">🇷🇺</div>
 
     <h1>ЕГЭ Русский язык</h1>
 
     <div class="description">
-        Тренажёр для подготовки к ЕГЭ.<br>
-        Решай задания и отслеживай свой прогресс.
+        Тренажёр для подготовки к ЕГЭ
     </div>
 
-    <button class="start" id="startButton">
+    <button class="main-button" onclick="showTopics()">
         📚 Начать тренировку
     </button>
 
     <div class="stats">
 
-        <div class="stat">
-            <div class="number">0</div>
-            <div class="label">Решено</div>
+        <div>
+            <div class="stat-number" id="solved">0</div>
+            <div class="stat-label">Решено</div>
         </div>
 
-        <div class="stat">
-            <div class="number">0%</div>
-            <div class="label">Точность</div>
+        <div>
+            <div class="stat-number" id="accuracy">0%</div>
+            <div class="stat-label">Точность</div>
         </div>
 
     </div>
 
 </div>
 
-<script>
-    const button = document.getElementById("startButton");
 
-    button.addEventListener("click", function() {
-        button.textContent = "📚 Загружаем тренировку...";
-    });
+<!-- =========================
+     СПИСОК ТЕМ
+========================= -->
+
+<div id="topicsScreen" class="topics-screen" style="display:none;">
+
+    <h2 class="topics-title">
+        📚 Выбери тему
+    </h2>
+
+    <button class="topic active" onclick="startTraining()">
+        📚 Приставка ПРЕ- и ПРИ-
+    </button>
+
+    <div class="topic disabled">
+        📝 Правописание НЕ и НИ
+        <span> — Скоро</span>
+    </div>
+
+    <div class="topic disabled">
+        🔤 Чередующиеся гласные
+        <span> — Скоро</span>
+    </div>
+
+    <div class="topic disabled">
+        ✏️ Ударения
+        <span> — Скоро</span>
+    </div>
+
+    <button class="back-button" onclick="showHome()">
+        ← Назад
+    </button>
+
+</div>
+
+
+<!-- =========================
+     ТРЕНИРОВКА
+========================= -->
+
+<div id="trainingScreen" class="training-screen" style="display:none;">
+
+    <!-- Верхняя половина -->
+    <div class="word-area">
+
+        <div id="word" class="word"></div>
+
+        <div id="result" class="result"></div>
+
+    </div>
+
+
+    <!-- Нижняя половина -->
+    <div class="buttons-area">
+
+        <button
+            id="eButton"
+            class="answer-button"
+            onclick="checkAnswer('е')">
+            Е
+        </button>
+
+        <button
+            id="iButton"
+            class="answer-button"
+            onclick="checkAnswer('и')">
+            И
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* =========================
+       СЛОВА
+    ========================= */
+
+    const words = [
+
+        {
+            before: "пр",
+            after: "красный",
+            correct: "е",
+            full: "прекрасный"
+        },
+
+        {
+            before: "пр",
+            after: "клеить",
+            correct: "и",
+            full: "приклеить"
+        },
+
+        {
+            before: "пр",
+            after: "одолеть",
+            correct: "е",
+            full: "преодолеть"
+        },
+
+        {
+            before: "пр",
+            after: "бежать",
+            correct: "и",
+            full: "прибежать"
+        }
+
+    ];
+
+
+    let currentWord = 0;
+
+    let solved = 0;
+    let correctAnswers = 0;
+
+
+    /* =========================
+       ЭКРАНЫ
+    ========================= */
+
+    function showHome() {
+
+        document.getElementById("homeScreen").style.display = "flex";
+        document.getElementById("topicsScreen").style.display = "none";
+        document.getElementById("trainingScreen").style.display = "none";
+
+    }
+
+
+    function showTopics() {
+
+        document.getElementById("homeScreen").style.display = "none";
+        document.getElementById("topicsScreen").style.display = "block";
+        document.getElementById("trainingScreen").style.display = "none";
+
+    }
+
+
+    function startTraining() {
+
+        document.getElementById("homeScreen").style.display = "none";
+        document.getElementById("topicsScreen").style.display = "none";
+        document.getElementById("trainingScreen").style.display = "flex";
+
+        currentWord = 0;
+
+        showWord();
+
+    }
+
+
+    /* =========================
+       ПОКАЗ СЛОВА
+    ========================= */
+
+    function showWord() {
+
+        const item = words[currentWord];
+
+        document.getElementById("word").innerHTML =
+            item.before +
+            '<span class="letter">_</span>' +
+            item.after;
+
+        document.getElementById("result").innerHTML = "";
+
+        document.getElementById("eButton").disabled = false;
+        document.getElementById("iButton").disabled = false;
+
+    }
+
+
+    /* =========================
+       ПРОВЕРКА ОТВЕТА
+    ========================= */
+
+    function checkAnswer(answer) {
+
+        const item = words[currentWord];
+
+        const letter = document.querySelector(".letter");
+
+        document.getElementById("eButton").disabled = true;
+        document.getElementById("iButton").disabled = true;
+
+
+        // Вставляем выбранную букву
+        letter.textContent = answer;
+
+
+        solved++;
+
+
+        if (answer === item.correct) {
+
+            // Правильная буква — зелёная
+            letter.classList.add("correct");
+
+            correctAnswers++;
+
+        } else {
+
+            // Неправильная буква — красная
+            letter.classList.add("wrong");
+
+            // Показываем правильное слово
+            document.getElementById("result").innerHTML = `
+                <div class="result-title">
+                    правильное слово:
+                </div>
+
+                <div class="correct-word">
+                    ${item.full}
+                </div>
+            `;
+
+        }
+
+
+        updateStats();
+
+
+        // Через 2 секунды следующее слово
+        setTimeout(() => {
+
+            currentWord++;
+
+            if (currentWord >= words.length) {
+                currentWord = 0;
+            }
+
+            showWord();
+
+        }, 2000);
+
+    }
+
+
+    /* =========================
+       СТАТИСТИКА
+    ========================= */
+
+    function updateStats() {
+
+        document.getElementById("solved").textContent = solved;
+
+        let accuracy = 0;
+
+        if (solved > 0) {
+            accuracy = Math.round(
+                (correctAnswers / solved) * 100
+            );
+        }
+
+        document.getElementById("accuracy").textContent =
+            accuracy + "%";
+
+    }
+
+
 </script>
 
 </body>
