@@ -1612,15 +1612,18 @@
 
         if (!initData) {
 
-            console.warn(
-                "initData пустой."
-            );
+    alert(
+        "ОШИБКА TELEGRAM\n\n" +
+        "initData пустой.\n\n" +
+        "Платформа: " +
+        tg.platform +
+        "\nВерсия: " +
+        tg.version
+    );
 
-            console.warn(
-                "Открой приложение через " +
-                "кнопку «🚀 Открыть приложение» " +
-                "в Telegram."
-            );
+    return;
+
+}
 
             return;
 
