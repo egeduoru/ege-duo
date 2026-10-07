@@ -1,5 +1,0 @@
-aiogram
-fastapi
-uvicorn
-python-docx
-pydantic
