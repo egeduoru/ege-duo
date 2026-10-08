@@ -1,0 +1,4122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>ЕГЭ Тренажёр</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "SF Pro Display",
+                "SF Pro Text",
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            color: #111827;
+
+            /* Сине-белый фон с мягким эффектом дыма / пара */
+        background:
+            radial-gradient(ellipse 38% 20% at 12% 18%, rgba(255,255,255,0.92) 0%, rgba(225,239,250,0.52) 42%, transparent 78%),
+            radial-gradient(ellipse 46% 24% at 84% 14%, rgba(255,255,255,0.86) 0%, rgba(205,226,242,0.48) 44%, transparent 80%),
+            radial-gradient(ellipse 52% 28% at 52% 48%, rgba(210,231,245,0.58) 0%, rgba(160,199,225,0.24) 48%, transparent 80%),
+            radial-gradient(ellipse 42% 22% at 10% 74%, rgba(255,255,255,0.82) 0%, rgba(202,226,242,0.42) 46%, transparent 80%),
+            radial-gradient(ellipse 50% 28% at 90% 78%, rgba(245,251,255,0.78) 0%, rgba(155,199,226,0.30) 46%, transparent 82%),
+            linear-gradient(135deg, #c5e1f5 0%, #f8fcff 28%, #b9d7ea 52%, #f4faff 72%, #bddbec 100%);
+        background-size: 180% 180%;
+        animation: smokeSky 28s ease-in-out infinite;
+    }
+
+    @keyframes smokeSky {
+        0% { background-position: 0% 15%; }
+        25% { background-position: 42% 0%; }
+        50% { background-position: 100% 52%; }
+        75% { background-position: 55% 100%; }
+        100% { background-position: 0% 15%; }
+    }
+
+    /* Мягкие полупрозрачные клубы дыма */
+    body::before,
+    body::after {
+        content: "";
+        position: fixed;
+        pointer-events: none;
+        z-index: 0;
+        width: min(105vw, 720px);
+        height: min(58vw, 380px);
+        border-radius: 50%;
+        filter: blur(38px);
+        opacity: 0.78;
+        background:
+            radial-gradient(ellipse at 10% 62%, rgba(255,255,255,0.86) 0 12%, transparent 34%),
+            radial-gradient(ellipse at 27% 38%, rgba(247,252,255,0.72) 0 18%, transparent 40%),
+            radial-gradient(ellipse at 46% 57%, rgba(225,239,248,0.82) 0 16%, transparent 39%),
+            radial-gradient(ellipse at 65% 35%, rgba(255,255,255,0.68) 0 15%, transparent 38%),
+            radial-gradient(ellipse at 84% 60%, rgba(211,231,242,0.70) 0 15%, transparent 37%);
+    }
+
+    body::before {
+        top: 4%;
+        left: -28%;
+        animation: smokeDriftA 20s ease-in-out infinite;
+    }
+
+    body::after {
+        right: -30%;
+        bottom: 3%;
+        opacity: 0.64;
+        filter: blur(48px);
+        mix-blend-mode: screen;
+        animation: smokeDriftB 25s ease-in-out infinite;
+    }
+
+    @keyframes smokeDriftA {
+        0%, 100% {
+            transform: translate3d(-30px, 12px, 0) scale(0.96) rotate(-2deg);
+            opacity: 0.68;
+        }
+        50% {
+            transform: translate3d(55px, -22px, 0) scale(1.10) rotate(3deg);
+            opacity: 0.86;
+        }
+    }
+
+    @keyframes smokeDriftB {
+        0%, 100% {
+            transform: translate3d(34px, -8px, 0) scale(1.05) rotate(2deg);
+            opacity: 0.54;
+        }
+        50% {
+            transform: translate3d(-48px, 24px, 0) scale(0.92) rotate(-4deg);
+            opacity: 0.76;
+        }
+    }
+
+        /* =========================
+           ОБЩИЙ ЭКРАН
+        ========================= */
+
+        .screen {
+            position: absolute;
+            inset: 0;
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            padding:
+                calc(env(safe-area-inset-top) + 20px)
+                18px
+                calc(env(safe-area-inset-bottom) + 20px);
+
+            overflow: hidden;
+
+            visibility: hidden;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate3d(22px, 0, 0) scale(0.985);
+            filter: blur(7px);
+
+            transition:
+                opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+                transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+                filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+
+            will-change: opacity, transform, filter;
+        }
+
+        .screen.active {
+            visibility: visible;
+            pointer-events: auto;
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+            z-index: 2;
+        }
+
+        /*
+           Переходы в стиле iOS / Liquid Glass:
+           новый экран мягко приходит с нужной стороны,
+           а старый слегка отходит назад и теряет резкость.
+        */
+        .screen.transition-forward {
+            transform: translate3d(28px, 0, 0) scale(0.982);
+        }
+
+        .screen.transition-back {
+            transform: translate3d(28px, 0, 0) scale(0.982);
+        }
+
+        .screen.leaving-forward {
+            opacity: 0;
+            transform: translate3d(-18px, 0, 0) scale(0.985);
+            filter: blur(5px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .screen.leaving-back {
+            opacity: 0;
+            transform: translate3d(-18px, 0, 0) scale(0.985);
+            filter: blur(5px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .screen {
+                transition: opacity 180ms ease;
+                transform: none !important;
+                filter: none !important;
+            }
+        }
+
+
+        /* =========================
+           HOME
+        ========================= */
+
+        #homeScreen {
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+        }
+
+        .home-content {
+            width: min(90vw, 420px);
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .home-title {
+            font-size: clamp(60px, 18vw, 92px);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+        }
+
+        /* Серия: первый концепт огня — компактное живое пламя над буквой U */
+        .streak-u {
+            position: relative;
+            display: inline-block;
+        }
+
+        .streak-flame {
+            position: absolute;
+            left: 50%;
+            top: -40px;
+            width: 50px;
+            height: 60px;
+            transform: translateX(-50%) scale(.9);
+            transform-origin: 50% 100%;
+            opacity: .16;
+            color: rgba(37, 99, 235, .28);
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 2;
+            transition: opacity .35s ease, color .35s ease, filter .35s ease, transform .35s ease;
+        }
+
+        .streak-flame::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 50% 77%, rgba(255,255,255,.98) 0 12%, transparent 13%),
+                linear-gradient(145deg, rgba(255,255,255,.28), transparent 34%),
+                currentColor;
+            clip-path: polygon(
+                51% 0%, 62% 15%, 61% 27%, 78% 18%, 76% 37%,
+                94% 49%, 86% 70%, 72% 88%, 53% 100%, 30% 96%,
+                12% 80%, 6% 60%, 19% 47%, 27% 31%, 42% 38%, 40% 20%
+            );
+            filter: saturate(1.15);
+        }
+
+        .streak-flame::after {
+            content: "";
+            position: absolute;
+            left: 12px;
+            bottom: 10px;
+            width: 26px;
+            height: 38px;
+            background:
+                radial-gradient(ellipse at 50% 82%, #ffffff 0 18%, rgba(255,255,255,.86) 19% 35%, transparent 36%),
+                linear-gradient(165deg, rgba(255,255,255,.95), rgba(255,255,255,.38));
+            clip-path: polygon(50% 0%, 71% 27%, 66% 43%, 88% 58%, 77% 83%, 57% 100%, 30% 94%, 12% 73%, 28% 53%, 39% 38%);
+            opacity: .86;
+            filter: blur(.15px);
+        }
+
+        .streak-flame.is-blue {
+            opacity: 1;
+            color: #2563eb;
+            filter: drop-shadow(0 3px 5px rgba(37, 99, 235, .22));
+            transform: translateX(-50%) scale(1);
+            animation: streakFlameFlicker 1.15s ease-in-out infinite;
+        }
+
+        .streak-flame.is-purple {
+            opacity: 1;
+            color: #8b5cf6;
+            filter: drop-shadow(0 3px 6px rgba(139, 92, 246, .28));
+            transform: translateX(-50%) scale(1.02);
+            animation: streakFlameFlicker 1.05s ease-in-out infinite;
+        }
+
+        @keyframes streakFlameFlicker {
+            0%, 100% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            22% { transform: translateX(-50%) rotate(2deg) scale(1.035, .97); }
+            48% { transform: translateX(-50%) rotate(-1deg) scale(.975, 1.045); }
+            72% { transform: translateX(-50%) rotate(3deg) scale(1.025, .985); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .streak-flame.is-blue,
+            .streak-flame.is-purple {
+                animation: none;
+            }
+        }
+
+        /* Окно серии: раскрывается мягко из центра экрана */
+        .streak-modal {
+            position: absolute;
+            inset: 0;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(235, 244, 250, .16);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 260ms ease, visibility 260ms ease;
+        }
+
+        .streak-modal-card {
+            width: min(300px, 82vw);
+            min-height: 180px;
+            padding: 28px 24px 24px;
+            border: 1px solid rgba(255,255,255,.9);
+            border-radius: 30px;
+            background: #ffffff;
+            box-shadow: 0 24px 60px rgba(31, 41, 55, .18);
+            text-align: center;
+            transform: scale(.62);
+            filter: blur(7px);
+            transition: transform 430ms cubic-bezier(.22,1,.36,1), filter 360ms ease;
+        }
+
+        .streak-modal.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .streak-modal.is-open .streak-modal-card {
+            transform: scale(1);
+            filter: blur(0);
+        }
+
+        .streak-modal-label {
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: .1px;
+            color: rgba(17,24,39,.58);
+        }
+
+        .streak-modal-number {
+            font-size: 58px;
+            line-height: .95;
+            font-weight: 800;
+            letter-spacing: -2.5px;
+            color: rgba(17,24,39,.92);
+        }
+
+        .streak-modal-days {
+            margin-top: 7px;
+            font-size: 17px;
+            font-weight: 700;
+            color: rgba(17,24,39,.78);
+        }
+
+        .streak-modal-hint {
+            margin-top: 17px;
+            font-size: 12px;
+            color: rgba(17,24,39,.45);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .streak-modal,
+            .streak-modal-card {
+                transition: none;
+            }
+        }
+
+        .home-subtitle {
+            font-size: 16px;
+            line-height: 1.45;
+
+            max-width: 330px;
+
+            color: rgba(17, 24, 39, 0.65);
+        }
+
+
+        /* =========================
+           GLASS BUTTON
+        ========================= */
+
+        .glass-button {
+            border: 1px solid rgba(255, 255, 255, 0.8);
+
+            background: rgba(255, 255, 255, 0.48);
+
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+
+            box-shadow:
+                0 12px 35px rgba(30, 100, 200, 0.12),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+
+            color: #111827;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.15s ease,
+                background 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .glass-button:active {
+            transform: scale(0.96);
+
+            background: rgba(255, 255, 255, 0.68);
+
+            box-shadow:
+                0 5px 18px rgba(30, 100, 200, 0.1),
+                inset 0 1px 2px rgba(255, 255, 255, 1);
+        }
+
+        .start-button {
+            width: min(86vw, 350px);
+            min-height: 64px;
+
+            padding: 15px 25px;
+
+            border-radius: 22px;
+
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           TOP BACK BUTTON
+        ========================= */
+
+        .back-button {
+            position: absolute;
+
+            top: calc(env(safe-area-inset-top) + 14px);
+            left: 16px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 27px;
+            font-weight: 400;
+
+            z-index: 20;
+        }
+
+        .swipe-toggle-button {
+            position: absolute;
+
+            top: calc(env(safe-area-inset-top) + 14px);
+            right: 16px;
+
+            width: 42px;
+            height: 42px;
+
+            padding: 0;
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            z-index: 20;
+        }
+
+        .swipe-toggle-icon {
+            width: 25px;
+            height: 25px;
+
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.15;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+
+            opacity: 0.92;
+            transition:
+                transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease;
+        }
+
+        .swipe-toggle-button.is-enabled .swipe-toggle-icon {
+            color: #22c55e;
+            filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.45));
+        }
+
+        .swipe-toggle-button.is-enabled .swipe-toggle-icon {
+            transform: rotate(18deg) scale(1.04);
+        }
+
+        /* =========================
+           TOPICS
+        ========================= */
+
+        #topicsScreen {
+            align-items: center;
+        }
+
+        .topics-title {
+            margin-top: 60px;
+            margin-bottom: 25px;
+
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .topics-list {
+            width: min(92vw, 430px);
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 12px;
+        }
+
+        .topic-button {
+            position: relative;
+
+            width: 100%;
+            min-height: 65px;
+
+            padding: 12px 17px;
+
+            border-radius: 19px;
+
+            display: flex;
+            align-items: center;
+
+            text-align: left;
+
+            font-size: 16px;
+            font-weight: 650;
+
+            /* В обычном состоянии активная тема без синего свечения. */
+            border-color: rgba(255, 255, 255, .78);
+            box-shadow:
+                0 10px 26px rgba(30, 100, 200, .07),
+                inset 0 1px 2px rgba(255, 255, 255, .95);
+        }
+
+        .topic-button.disabled {
+            opacity: 0.42;
+            cursor: default;
+            border-color: rgba(255,255,255,.8);
+            box-shadow:
+                0 12px 35px rgba(30, 100, 200, 0.12),
+                inset 0 1px 2px rgba(255,255,255,.95);
+        }
+
+        /* Плавное поднятие темы при наведении */
+        @media (hover: hover) and (pointer: fine) {
+            .topic-button:not(.disabled) {
+                transition:
+                    transform 180ms cubic-bezier(.22, 1, .36, 1),
+                    border-color 180ms ease,
+                    box-shadow 180ms ease,
+                    background 180ms ease;
+            }
+
+            .topic-button:not(.disabled):hover {
+                transform: scale3d(1.08, .92, 1);
+                border-color: rgba(96, 196, 255, .9);
+                box-shadow:
+                    0 0 0 1px rgba(96, 196, 255, .35),
+                    0 0 14px rgba(96, 196, 255, .55),
+                    0 0 30px rgba(96, 196, 255, .32),
+                    0 14px 30px rgba(37, 99, 235, .12),
+                    inset 0 1px 2px rgba(255, 255, 255, .95);
+            }
+
+            .topic-button:not(.disabled):active {
+                transform: scale3d(.92, 1.08, 1);
+            }
+        }
+
+        .topic-button .soon {
+            margin-left: auto;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            padding: 5px 8px;
+
+            border-radius: 8px;
+
+            background: rgba(100, 116, 139, 0.12);
+            color: #64748b;
+        }
+
+
+        /* Полоса прокрутки для списка тем */
+        #topicsScreen {
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(100, 116, 139, 0.55) rgba(255,255,255,0.28);
+        }
+
+        #topicsScreen::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        #topicsScreen::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.28);
+            border-radius: 999px;
+        }
+
+        #topicsScreen::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.55);
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        #topicsScreen::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 0.72);
+        }
+
+        /* =========================
+           TRAINING
+        ========================= */
+
+        #trainingScreen {
+            padding-left: 0;
+            padding-right: 0;
+            padding-bottom: 0;
+        }
+
+
+        /* =========================
+           STATS
+        ========================= */
+
+        .stats {
+            position: absolute;
+
+            top: calc(env(safe-area-inset-top) + 14px);
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: min(78vw, 320px);
+
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+
+            gap: 5px;
+
+            z-index: 10;
+        }
+
+        .stat {
+            height: 34px;
+
+            padding: 0 6px;
+
+            border-radius: 10px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+
+            font-size: 10px;
+            font-weight: 650;
+
+            white-space: nowrap;
+
+            border: 1px solid rgba(255, 255, 255, 0.7);
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            box-shadow:
+                0 7px 18px rgba(30, 100, 200, 0.08),
+                inset 0 1px 2px rgba(255, 255, 255, 0.85);
+        }
+
+        .stat.correct {
+            color: #16803c;
+            background: rgba(220, 252, 231, 0.58);
+        }
+
+        .stat.wrong {
+            color: #dc2626;
+            background: rgba(254, 226, 226, 0.58);
+        }
+
+        .stat.total {
+            color: #64748b;
+            background: rgba(241, 245, 249, 0.58);
+        }
+
+
+        /* =========================
+           TRAINING TOP
+        ========================= */
+
+        .training-top {
+            position: relative;
+
+            /* Большая верхняя зона специально отведена под N20.
+               Текст может занимать несколько строк по высоте, но
+               никогда не пересекается со счётчиками и кнопками. */
+            height: 66%;
+            min-height: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            padding:
+                72px
+                20px
+                18px;
+            box-sizing: border-box;
+        }
+
+        .word-area {
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .word-area.n20-layout {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /*
+           В N20 результат всегда находится ОТДЕЛЬНО под заданием.
+           Он не накладывается на текст: под него заранее резервируется
+           собственная высота в fitTaskText().
+        */
+        .word-area.n20-layout .result {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 54px;
+            min-height: 54px;
+            margin: 0;
+            transform: none;
+            box-sizing: border-box;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Визуальный центр N20: основной текст центрируется
+           относительно всей безопасной области экрана, а результат
+           закреплён отдельно снизу и не смещает текст. */
+        .word.n20-fit {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .word.n20-fit .word-main {
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+
+        .word {
+            font-size: clamp(38px, 11vw, 58px);
+
+            font-weight: 800;
+
+            letter-spacing: -1px;
+
+            color: #111827;
+
+            min-height: 70px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word .missing {
+            display: inline-block;
+
+            min-width: 0.6em;
+
+            color: #2563eb;
+        }
+
+        .word.n20-fit {
+            /* Уже по ширине = больше строк и больше доступной высоты. */
+            width: min(90vw, 900px);
+            max-width: min(90vw, 900px);
+            min-height: 0;
+            line-height: 1.08;
+            letter-spacing: -0.35px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .word.n20-fit .word-main {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            text-align: center;
+        }
+
+
+        /* =========================
+           RESULT
+        ========================= */
+
+        .result {
+            margin-top: 12px;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+
+            min-height: 54px;
+
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 12px;
+            font-weight: 600;
+
+            color: rgba(17, 24, 39, 0.55);
+
+            line-height: 1.3;
+        }
+
+        .result-word {
+            margin-top: 3px;
+
+            font-size: 15px;
+            font-weight: 700;
+
+            line-height: 1.2;
+        }
+
+        .result.correct-result .result-word {
+            color: #16803c;
+        }
+
+        .result.wrong-result .result-word {
+            color: #dc2626;
+        }
+
+
+        /* =========================
+           ANSWER AREA
+        ========================= */
+
+        .training-bottom {
+            height: 34%;
+            min-height: 0;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+
+            padding:
+                10px
+                20px
+                calc(env(safe-area-inset-bottom) + 42px);
+            box-sizing: border-box;
+        }
+
+        .answer-buttons {
+            width: min(78vw, 310px);
+
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+
+            gap: 16px;
+        }
+
+        .answer-buttons.three-buttons {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .word-note {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.42em;
+            line-height: 1.15;
+            font-weight: 500;
+            opacity: 0.75;
+        }
+
+        .result-word-note {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.72em;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .answer-button {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+
+            border-radius: 25px;
+
+            font-size: clamp(36px, 11vw, 58px);
+            font-weight: 750;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            user-select: none;
+
+            transition:
+                transform 0.12s ease,
+                background 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .answer-button:active {
+            transform: scale(0.94);
+        }
+
+        .answer-button.correct-answer {
+            background: rgba(187, 247, 208, 0.75);
+            border-color: rgba(34, 197, 94, 0.7);
+
+            color: #15803d;
+
+            box-shadow:
+                0 12px 30px rgba(34, 197, 94, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+        }
+
+        .answer-button.wrong-answer {
+            background: rgba(254, 202, 202, 0.78);
+            border-color: rgba(239, 68, 68, 0.7);
+
+            color: #dc2626;
+
+            box-shadow:
+                0 12px 30px rgba(239, 68, 68, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95);
+        }
+
+        .answer-button.disabled {
+            pointer-events: none;
+        }
+
+        .answer-button.n20-number-button,
+        .n20-submit-button {
+            aspect-ratio: auto;
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .answer-button.n20-number-button.selected {
+            background: rgba(250, 204, 21, .78);
+            border-color: rgba(234, 179, 8, .82);
+            color: #92400e;
+            box-shadow: 0 8px 22px rgba(234, 179, 8, .18), inset 0 1px 2px rgba(255,255,255,.95);
+        }
+
+        .answer-buttons.n20-mode {
+            width: min(92vw, 320px);
+            grid-template-columns: repeat(5, 48px);
+            grid-auto-rows: 48px;
+            justify-content: center;
+            gap: 7px;
+        }
+
+        .n20-submit-button {
+            grid-column: auto;
+            justify-self: center;
+
+            /* Галочка должна быть геометрически по центру кнопки.
+               У обычного <button> есть собственные padding/line-height,
+               поэтому для N20 задаём центрирование явно. */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+            text-align: center;
+
+            background: rgba(255,255,255,.52);
+            color: #111827;
+            box-shadow: 0 8px 20px rgba(30,100,200,.10), inset 0 1px 2px rgba(255,255,255,.95);
+        }
+
+
+        /* =========================
+           ANIMATIONS
+        ========================= */
+
+        /* Очень мягкое, почти незаметное переключение слов. */
+        .word {
+            position: relative;
+        }
+
+        .word-switch-old,
+        .word-switch-new {
+            display: inline-block;
+            white-space: nowrap;
+            will-change: opacity, filter;
+        }
+
+        .word-switch-old {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            animation: wordFadeOut 190ms ease-out forwards;
+            pointer-events: none;
+        }
+
+        .word-switch-new {
+            animation: wordFadeIn 220ms ease-out forwards;
+        }
+
+        @keyframes wordFadeOut {
+            from {
+                opacity: 1;
+                filter: blur(0);
+            }
+            to {
+                opacity: 0;
+                filter: blur(.35px);
+            }
+        }
+
+        @keyframes wordFadeIn {
+            from {
+                opacity: 0;
+                filter: blur(.35px);
+            }
+            to {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .word-switch-old,
+            .word-switch-new {
+                animation: none;
+            }
+            .word-switch-old {
+                display: none;
+            }
+        }
+
+.pop {
+            animation: pop 0.18s ease;
+        }
+
+        @keyframes pop {
+
+            0% {
+                transform: scale(0.92);
+            }
+
+            70% {
+                transform: scale(1.04);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+
+        /* Короткая тряска экрана при двойном нажатии / сбросе цикла */
+        .training-screen.cycle-shake {
+            animation: cycleEarthquake 420ms cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes cycleEarthquake {
+            0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+            10%  { transform: translate3d(-9px, 2px, 0) rotate(-0.7deg); }
+            20%  { transform: translate3d(8px, -2px, 0) rotate(0.7deg); }
+            30%  { transform: translate3d(-7px, 1px, 0) rotate(-0.55deg); }
+            40%  { transform: translate3d(6px, -1px, 0) rotate(0.5deg); }
+            52%  { transform: translate3d(-4px, 1px, 0) rotate(-0.35deg); }
+            65%  { transform: translate3d(3px, 0, 0) rotate(0.25deg); }
+            80%  { transform: translate3d(-1px, 0, 0) rotate(-0.1deg); }
+            100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .training-screen.cycle-shake {
+                animation: none;
+            }
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-height: 650px) {
+
+            .training-top {
+                height: 66%;
+                padding-top: 68px;
+            }
+
+            .word:not(.n20-fit) {
+                font-size: 38px;
+            }
+
+            .answer-buttons {
+                width: min(65vw, 240px);
+                gap: 12px;
+            }
+
+            .answer-button {
+                border-radius: 20px;
+            }
+        }
+        /* Желейная форма кнопок: форма держится, пока курсор на кнопке. */
+        .glass-button {
+            transform-origin: center;
+            will-change: transform;
+            transition:
+                transform 0.28s cubic-bezier(.22,1.2,.36,1),
+                background 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .glass-button:hover {
+            transform: scale3d(1.08, .92, 1);
+        }
+
+        .glass-button:active {
+            transform: scale3d(.92, 1.08, 1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .glass-button {
+                transition: none;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         HOME
+    ========================= -->
+
+    <section
+        id="homeScreen"
+        class="screen active"
+    >
+
+        <div class="home-content">
+
+            <div class="home-title" aria-label="БаллUP">
+                Балл<span class="streak-u">U<span class="streak-flame" id="streakFlame" aria-hidden="true" role="button" tabindex="0" aria-label="Открыть серию"></span></span>P
+            </div>
+
+            <div class="streak-modal" id="streakModal" aria-hidden="true">
+                <div class="streak-modal-card" role="dialog" aria-modal="true" aria-label="Серия активности">
+                    <div class="streak-modal-label">Твоя серия</div>
+                    <div class="streak-modal-number" id="streakModalNumber">0</div>
+                    <div class="streak-modal-days" id="streakModalDays">дней активности</div>
+                    <div class="streak-modal-hint">Нажми ещё раз, чтобы закрыть</div>
+                </div>
+            </div>
+
+            <div class="home-subtitle">
+                Тренажёр для подготовки к экзамену
+            </div>
+
+            <button
+                class="glass-button start-button"
+                id="startTrainingButton"
+            >
+                📚 Начать тренировку
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         TOPICS
+    ========================= -->
+
+    <section
+        id="topicsScreen"
+        class="screen"
+    >
+
+        <button
+            class="glass-button back-button"
+            id="topicsBackButton"
+            aria-label="Назад"
+        >
+            &lt;
+        </button>
+
+
+        <button
+            class="glass-button swipe-toggle-button"
+            id="swipeToggleButton"
+            type="button"
+            aria-label="Включить свайпы"
+            title="Включить свайпы"
+        >
+            <svg
+                class="swipe-toggle-icon"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+            >
+                <rect x="15" y="7" width="18" height="34" rx="5.5"></rect>
+                <path d="M20 12h8"></path>
+                <path d="M8 21c-2.4 1.8-3.6 4-3.6 6.5S5.6 32.2 8 34"></path>
+                <path d="M40 21c2.4 1.8 3.6 4 3.6 6.5S42.4 32.2 40 34"></path>
+                <path d="M11 18l-3 3 3 3"></path>
+                <path d="M37 18l3 3-3 3"></path>
+            </svg>
+        </button>
+
+
+        <div class="topics-title">
+            Темы
+        </div>
+
+
+        <div class="topics-list">
+
+            <button
+                class="glass-button topic-button"
+                id="prePriTopic"
+            >
+                📚 Приставка ПРЕ- и ПРИ-
+            </button>
+
+
+            <button
+                class="glass-button topic-button"
+                id="dictionaryTopic"
+            >
+                📖 Словарные слова
+            </button>
+
+
+            <button
+                class="glass-button topic-button"
+                id="n20Topic"
+            >
+                🧩 N20 Предложения с разными видами связи
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                📝 Ударения
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                🔤 Правописание НЕ
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                📖 Лексические нормы
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+
+            <button
+                class="glass-button topic-button disabled"
+                disabled
+            >
+                ✏️ Грамматические нормы
+
+                <span class="soon">
+                    Скоро
+                </span>
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         TRAINING
+    ========================= -->
+
+    <section
+        id="trainingScreen"
+        class="screen training-screen"
+    >
+
+
+        <button
+            class="glass-button back-button"
+            id="trainingBackButton"
+            aria-label="Назад"
+        >
+            &lt;
+        </button>
+
+
+        <!-- СЧЁТЧИК -->
+
+        <div class="stats">
+
+            <div
+                class="stat correct"
+                id="correctStat"
+            >
+                Верно: 0
+            </div>
+
+            <div
+                class="stat wrong"
+                id="wrongStat"
+            >
+                Неверно: 0
+            </div>
+
+            <div
+                class="stat total"
+                id="totalStat"
+            >
+                Всего: 0
+            </div>
+
+        </div>
+
+
+        <!-- ВЕРХ -->
+
+        <div class="training-top">
+
+            <div
+                class="word-area"
+                id="wordArea"
+            >
+
+                <div
+                    class="word"
+                    id="word"
+                >
+                    пр_красный
+                </div>
+
+
+                <div
+                    class="result"
+                    id="result"
+                >
+
+                    <div
+                        class="result-label"
+                        id="resultLabel"
+                    ></div>
+
+                    <div
+                        class="result-word"
+                        id="resultWord"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- НИЗ -->
+
+        <div class="training-bottom">
+
+            <div class="answer-buttons">
+                <button class="glass-button answer-button" data-letter="е" id="buttonE">Е</button>
+                <button class="glass-button answer-button" data-letter="и" id="buttonI">И</button>
+                <button class="glass-button answer-button" data-letter="" id="buttonThird" aria-label="пусто"></button>
+
+                <button class="glass-button answer-button n20-number-button" data-letter="1" id="buttonOne">1</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="2" id="buttonTwo">2</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="3" id="buttonThree">3</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="4" id="buttonFour">4</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="5" id="buttonFive">5</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="6" id="buttonSix">6</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="7" id="buttonSeven">7</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="8" id="buttonEight">8</button>
+                <button class="glass-button answer-button n20-number-button" data-letter="9" id="buttonNine">9</button>
+
+                <button class="glass-button n20-submit-button" id="n20Submit" aria-label="Проверить ответ" type="button">✓</button>
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+<script>
+
+    /* =========================================================
+       TELEGRAM
+    ========================================================= */
+
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+    tg.expand();
+
+
+    /* =========================================================
+       BACKEND
+       
+       ПОКА ОСТАВЛЯЕМ ЗАГЛУШКУ.
+       
+       Когда сделаем backend, сюда поставим его адрес:
+       
+       const API_URL = "https://example.com/wrong-answer";
+       
+       ========================================================= */
+
+    const API_URL = "";
+
+
+    /* =========================================================
+       СЛОВА
+       ========================================================= */
+
+    const words = [
+        {
+            "task_id": "prepri_0001",
+            "before": "пр",
+            "after": "амбула",
+            "correct": "е",
+            "full": "преамбула"
+        },
+        {
+            "task_id": "prepri_0002",
+            "before": "пр",
+            "after": "подавать",
+            "correct": "е",
+            "full": "преподавать"
+        },
+        {
+            "task_id": "prepri_0003",
+            "before": "пр",
+            "after": "мат",
+            "correct": "и",
+            "full": "примат"
+        },
+        {
+            "task_id": "prepri_0004",
+            "before": "пр",
+            "after": "фект",
+            "correct": "е",
+            "full": "префект"
+        }
+    ];
+
+
+    const dictionaryWords = [
+        {
+            "task_id": "dictionary_0001",
+            "before": "аб",
+            "after": "жур",
+            "correct": "а",
+            "full": "абажур",
+            "options": [
+                "а",
+                "о"
+            ],
+            "note": ""
+        },
+        {
+            "task_id": "dictionary_0002",
+            "before": "вакх",
+            "after": "налия",
+            "correct": "а",
+            "full": "вакханалия",
+            "options": [
+                "а",
+                "о"
+            ],
+            "note": ""
+        },
+        {
+            "task_id": "dictionary_0003",
+            "before": "анаф",
+            "after": "ра",
+            "correct": "о",
+            "full": "анафора",
+            "options": [
+                "о",
+                "а"
+            ],
+            "note": ""
+        },
+        {
+            "task_id": "dictionary_0004",
+            "before": "бук",
+            "after": "нист",
+            "correct": "и",
+            "full": "букинист",
+            "options": [
+                "и",
+                "е"
+            ],
+            "note": ""
+        }
+    ];
+
+    const n20Words = [
+        {
+            "task_id": "n20_0001",
+            "text": "Няня уверена (1) что крещёная вода целебная (2) и мы тоже знали (3) что (4) чем раньше почерпнуть освящённой воды (5) тем она святее.",
+            "correct": "1235",
+            "full": "Няня уверена (1) что крещёная вода целебная (2) и мы тоже знали (3) что (4) чем раньше почерпнуть освящённой воды (5) тем она святее.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0002",
+            "text": "Он задавал вопросы, не ожидая ответов и вроде бы не очень интересуясь ими, но вопросы остались (1) и Олексин шёл домой с ощущением (2) что вопросы эти прицепились к нему надолго (3) что ответов на них ему не отыскать (4) и (5) что (6) если он даже и отыщет эти ответы (7) легче от этого ему не станет.",
+            "correct": "12367",
+            "full": "Он задавал вопросы, не ожидая ответов и вроде бы не очень интересуясь ими, но вопросы остались (1) и Олексин шёл домой с ощущением (2) что вопросы эти прицепились к нему надолго (3) что ответов на них ему не отыскать (4) и (5) что (6) если он даже и отыщет эти ответы (7) легче от этого ему не станет.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0003",
+            "text": "Штольц измерит бездну или стену (1) и (2) если нет верного средства её одолеть (3) то он отойдёт (4) что бы там про него ни говорили.",
+            "correct": "134",
+            "full": "Штольц измерит бездну или стену (1) и (2) если нет верного средства её одолеть (3) то он отойдёт (4) что бы там про него ни говорили.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0004",
+            "text": "Маргарита говорила (1) что с жёлтыми цветами в руках она вышла в тот день (2) чтобы я наконец её нашёл (3) и (4) что (5) если бы этого не произошло (6) она отравилась бы (7) по­тому что жизнь её пуста.",
+            "correct": "123567",
+            "full": "Маргарита говорила (1) что с жёлтыми цветами в руках она вышла в тот день (2) чтобы я наконец её нашёл (3) и (4) что (5) если бы этого не произошло (6) она отравилась бы (7) по­тому что жизнь её пуста.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0005",
+            "text": "Антон Сергеевич вставал с ранней зарёй (1) и (2) когда он вдыхал прохладный воздух (3) который был напоён влажным запахом росы (4) то ощущал в себе невероятные силы (5) а на душе у него становилось радостно.",
+            "correct": "1345",
+            "full": "Антон Сергеевич вставал с ранней зарёй (1) и (2) когда он вдыхал прохладный воздух (3) который был напоён влажным запахом росы (4) то ощущал в себе невероятные силы (5) а на душе у него становилось радостно.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0006",
+            "text": "Лопатин подумал об Иноземцеве (1) что он правильный человек (2) и (3) что (4) когда подают в партию рекомендации (5) надо просить у таких, как он (6) а не у тех (7) кто готов дать её любому…",
+            "correct": "14567",
+            "full": "Лопатин подумал об Иноземцеве (1) что он правильный человек (2) и (3) что (4) когда подают в партию рекомендации (5) надо просить у таких, как он (6) а не у тех (7) кто готов дать её любому…",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0007",
+            "text": "Камлаев сказал себе (1) что не может этого быть (2) и (3) что (4) когда Нина проснётся (5) её мысли снова потекут сквозь него.",
+            "correct": "145",
+            "full": "Камлаев сказал себе (1) что не может этого быть (2) и (3) что (4) когда Нина проснётся (5) её мысли снова потекут сквозь него.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0008",
+            "text": "Чиновник смотрел в окно (1) и (2) пока белые пальцы девушки бегали взад и вперёд по клавишам (3) ему казалось (4) что всё вокруг так красиво от музыки (5) и (6) что (7) когда музыка перестанет (8) всё исчезнет.",
+            "correct": "123478",
+            "full": "Чиновник смотрел в окно (1) и (2) пока белые пальцы девушки бегали взад и вперёд по клавишам (3) ему казалось (4) что всё вокруг так красиво от музыки (5) и (6) что (7) когда музыка перестанет (8) всё исчезнет.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0009",
+            "text": "Каково же было моё удивление (1) когда уже к вечеру того же дня мне сообщили (2) что на меня было произведено покушение (3) что покусившийся был нанят доктором Дубровиным с поручением нанести удар (4) после которого я не встану (5) и (6) что (7) когда он не исполнил поручения (8) то был обруган Дубровиным.",
+            "correct": "123458",
+            "full": "Каково же было моё удивление (1) когда уже к вечеру того же дня мне сообщили (2) что на меня было произведено покушение (3) что покусившийся был нанят доктором Дубровиным с поручением нанести удар (4) после которого я не встану (5) и (6) что (7) когда он не исполнил поручения (8) то был обруган Дубровиным.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0010",
+            "text": "Одна нога у Лидки сохла (1) а сама она жила по другую сторону булыжного тракта в утеплённом сарае (2) где выкармливала сизое дитя (3) если бывала дома (4) и (5) если (6) пока бывала дома (7) не занималась посторонними делами (8) от которых (9) никому не было никакой пользы.",
+            "correct": "123678",
+            "full": "Одна нога у Лидки сохла (1) а сама она жила по другую сторону булыжного тракта в утеплённом сарае (2) где выкармливала сизое дитя (3) если бывала дома (4) и (5) если (6) пока бывала дома (7) не занималась посторонними делами (8) от которых (9) никому не было никакой пользы.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0011",
+            "text": "Что задержавшийся там делал это небольшое время (1) оставалось загадкой (2) но их командир знал (3) что́ (4) когда догнавший поравнялся с ним (5) впереди послышались их короткие (6) и малопонятные реплики.",
+            "correct": "1245",
+            "full": "Что задержавшийся там делал это небольшое время (1) оставалось загадкой (2) но их командир знал (3) что́ (4) когда догнавший поравнялся с ним (5) впереди послышались их короткие (6) и малопонятные реплики.",
+            "options": ["1", "2", "3", "4", "5"]
+        },
+        {
+            "task_id": "n20_0012",
+            "text": "И всё же я остаюсь при мысли (1) что именно такая муза придавала трагический накал поэзии Блока (2) и (3) что (4) если б ему пели свои песни те самые ангелы (5) с которыми так нехорошо обошлась его муза (6) мы имели бы одним добродетельным гражданином больше и одним великим поэтом меньше.",
+            "correct": "1456",
+            "full": "И всё же я остаюсь при мысли (1) что именно такая муза придавала трагический накал поэзии Блока (2) и (3) что (4) если б ему пели свои песни те самые ангелы (5) с которыми так нехорошо обошлась его муза (6) мы имели бы одним добродетельным гражданином больше и одним великим поэтом меньше.",
+            "options": ["1", "2", "3", "4", "5"]
+        }
+    ];
+
+
+    /* =========================================================
+       СОСТОЯНИЕ ТРЕНИРОВКИ
+       ========================================================= */
+
+    let correctCount = 0;
+
+    let wrongCount = 0;
+
+    /*
+       Слова, которые ещё не были правильно решены.
+    */
+
+    let activeWords = [];
+
+
+    /*
+       Очередь отложенных слов.
+
+       Каждый объект:
+
+       {
+           word: слово,
+           delay: сколько других слов
+                  нужно пройти перед возвратом
+       }
+    */
+
+    let delayedWords = [];
+
+
+    let currentWord = null;
+
+    // true, если текущее задание уже было ошибочным раньше
+    let currentWordWasPreviouslyWrong = false;
+
+    let currentWordSet = words;
+
+    let answerLocked = false;
+
+    let currentRoundNumber = 0;
+
+    /* =========================================================
+       СОХРАНЕНИЕ ПРОГРЕССА
+       ========================================================= */
+
+    const PROGRESS_STORAGE_KEY = "egeTrainerProgress_v1";
+    const STREAK_STORAGE_KEY = "ballUpStreak_v1";
+    const DAILY_TOPIC_KEYS = ["prePri", "dictionary", "n20"];
+    let currentTopicKey = null;
+    let resumeAfterAnswer = false;
+
+    // Управление встряской активно только внутри тренировки.
+    // Встряска вправо/влево выбирает соответствующий вариант ответа.
+    let isTrainingActive = false;
+    let shakeListenerAttached = false;
+    let lastShakeTime = 0;
+    let shakeGestureStart = 0;
+    let shakePositive = 0;
+    let shakeNegative = 0;
+    const SHAKE_THRESHOLD = 12;
+    const SHAKE_TOTAL_THRESHOLD = 34;
+    const SHAKE_GESTURE_WINDOW = 180;
+    const SHAKE_DIRECTION_MARGIN = 0.18;
+    const SHAKE_COOLDOWN = 700;
+
+    // Двойное нажатие по свободному месту тренировки запускает новый цикл.
+    let lastFreeTapTime = 0;
+    let lastFreeTapX = 0;
+    let lastFreeTapY = 0;
+    const DOUBLE_TAP_DELAY = 350;
+    const DOUBLE_TAP_DISTANCE = 45;
+
+    const topicKeys = new Map([
+        [words, "prePri"],
+        [dictionaryWords, "dictionary"],
+        [n20Words, "n20"]
+    ]);
+
+    function getWordIndex(wordSet, word) {
+        return wordSet.indexOf(word);
+    }
+
+    /* =========================================================
+       СЕРИЯ / ДНЕВНАЯ НОРМА
+       День считается выполненным, если полностью завершена
+       хотя бы одна тема. Если за день завершены все темы,
+       огонёк становится фиолетовым.
+    ========================================================= */
+
+    const streakFlame = document.getElementById("streakFlame");
+    const streakModal = document.getElementById("streakModal");
+    const streakModalNumber = document.getElementById("streakModalNumber");
+    const streakModalDays = document.getElementById("streakModalDays");
+
+    function getLocalDateKey(date = new Date()) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+
+    function shiftLocalDate(dateKey, days) {
+        const date = new Date(`${dateKey}T12:00:00`);
+        date.setDate(date.getDate() + days);
+        return getLocalDateKey(date);
+    }
+
+    function loadStreakState() {
+        try {
+            const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+            if (!raw) {
+                return { streak: 0, lastCompletedDate: null, completedTopics: {} };
+            }
+
+            const parsed = JSON.parse(raw);
+            return {
+                streak: Number.isFinite(parsed?.streak) ? parsed.streak : 0,
+                lastCompletedDate: parsed?.lastCompletedDate || null,
+                completedTopics: parsed?.completedTopics && typeof parsed.completedTopics === "object"
+                    ? parsed.completedTopics
+                    : {}
+            };
+        } catch (error) {
+            return { streak: 0, lastCompletedDate: null, completedTopics: {} };
+        }
+    }
+
+    function saveStreakState(state) {
+        try {
+            localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+            console.warn("Не удалось сохранить серию:", error);
+        }
+    }
+
+    function updateStreakFlame() {
+        if (!streakFlame) return;
+
+        const state = loadStreakState();
+        const today = getLocalDateKey();
+        const completedToday = state.completedTopics?.[today] || [];
+        const hasAnyTopic = completedToday.length > 0;
+        const allTopics = DAILY_TOPIC_KEYS.every(key => completedToday.includes(key));
+
+        streakFlame.classList.remove("is-blue", "is-purple");
+
+        if (allTopics) {
+            streakFlame.classList.add("is-purple");
+            streakFlame.title = `Серия ${state.streak} • все темы за сегодня выполнены`;
+        } else if (hasAnyTopic) {
+            streakFlame.classList.add("is-blue");
+            streakFlame.title = `Серия ${state.streak} • дневная норма выполнена`;
+        } else {
+            streakFlame.title = `Серия ${state.streak} • выполни любую тему сегодня`;
+        }
+    }
+
+    function markTopicCompletedForToday(topicKey) {
+        const today = getLocalDateKey();
+        const state = loadStreakState();
+        const completedToday = Array.isArray(state.completedTopics?.[today])
+            ? state.completedTopics[today] : [];
+
+        // Повторное завершение той же темы в тот же день серию не увеличивает.
+        if (!completedToday.includes(topicKey)) {
+            completedToday.push(topicKey);
+        }
+
+        // Первая выполненная тема нового дня формирует новую серию.
+        if (state.lastCompletedDate !== today) {
+            const yesterday = state.lastCompletedDate
+                ? shiftLocalDate(today, -1)
+                : null;
+
+            state.streak = state.lastCompletedDate === yesterday
+                ? state.streak + 1
+                : 1;
+
+            state.lastCompletedDate = today;
+        }
+
+        if (!state.completedTopics || typeof state.completedTopics !== "object") {
+            state.completedTopics = {};
+        }
+
+        state.completedTopics[today] = completedToday;
+        saveStreakState(state);
+        updateStreakFlame();
+    }
+
+    function openStreakModal() {
+        if (!streakModal) return;
+
+        const state = loadStreakState();
+        const days = Math.max(0, Number.isFinite(state.streak) ? state.streak : 0);
+        streakModalNumber.textContent = String(days);
+        streakModalDays.textContent = days === 1 ? "день активности" : (days >= 2 && days <= 4 ? "дня активности" : "дней активности");
+
+        streakModal.classList.add("is-open");
+        streakModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeStreakModal() {
+        if (!streakModal) return;
+        streakModal.classList.remove("is-open");
+        streakModal.setAttribute("aria-hidden", "true");
+    }
+
+    function toggleStreakModal() {
+        if (!streakModal) return;
+        if (streakModal.classList.contains("is-open")) {
+            closeStreakModal();
+        } else {
+            openStreakModal();
+        }
+    }
+
+    if (streakFlame) {
+        streakFlame.addEventListener("click", (event) => {
+            event.stopPropagation();
+            toggleStreakModal();
+        });
+
+        streakFlame.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleStreakModal();
+            }
+        });
+    }
+
+    if (streakModal) {
+        streakModal.addEventListener("click", (event) => {
+            // Любой один тап по открытому окну сворачивает его обратно.
+            event.stopPropagation();
+            closeStreakModal();
+        });
+    }
+
+    function refreshStreakForToday() {
+        // Старая история сохраняется, но цвет огонька всегда отражает именно сегодня.
+        updateStreakFlame();
+    }
+
+    function saveProgress() {
+        if (!currentTopicKey) {
+            return;
+        }
+
+        try {
+            const state = {
+                topic: currentTopicKey,
+                correctCount,
+                wrongCount,
+                currentRoundNumber,
+                activeWords: activeWords.map(word => getWordIndex(currentWordSet, word)),
+                delayedWords: delayedWords.map(item => ({
+                    index: getWordIndex(currentWordSet, item.word),
+                    delay: item.delay
+                })),
+                currentWordIndex: currentWord
+                    ? getWordIndex(currentWordSet, currentWord)
+                    : -1,
+                currentWordWasPreviouslyWrong,
+                resumeAfterAnswer,
+                selectedN20: currentTopicKey === "n20" ? getN20SelectedAnswer() : "",
+                taskSchemaVersion: currentTopicKey === "n20" ? 2 : 1
+            };
+
+            /*
+               Прогресс хранится отдельно для каждой темы.
+               Поэтому переход в другую тему больше не затирает
+               состояние предыдущей.
+            */
+            let allProgress = {};
+            const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === "object") {
+                        if (parsed.topics && typeof parsed.topics === "object") {
+                            allProgress = parsed.topics;
+                        } else if (parsed.topic) {
+                            // Миграция старого формата, где хранилась только одна тема.
+                            allProgress[parsed.topic] = parsed;
+                        }
+                    }
+                } catch (parseError) {
+                    console.warn("Не удалось прочитать сохранённый прогресс:", parseError);
+                }
+            }
+
+            allProgress[currentTopicKey] = state;
+
+            localStorage.setItem(
+                PROGRESS_STORAGE_KEY,
+                JSON.stringify({
+                    version: 2,
+                    topics: allProgress
+                })
+            );
+        } catch (error) {
+            console.warn("Не удалось сохранить прогресс:", error);
+        }
+    }
+
+    function loadProgress(topicKey) {
+        try {
+            const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+
+            if (!raw) {
+                return null;
+            }
+
+            const parsed = JSON.parse(raw);
+            let state = null;
+
+            if (
+                parsed &&
+                parsed.topics &&
+                typeof parsed.topics === "object"
+            ) {
+                state = parsed.topics[topicKey] || null;
+            } else if (
+                parsed &&
+                parsed.topic === topicKey
+            ) {
+                // Поддержка старого формата одного сохранённого состояния.
+                state = parsed;
+            }
+
+            if (!state) {
+                return null;
+            }
+
+            const wordSet = topicKey === "dictionary"
+                ? dictionaryWords
+                : (topicKey === "n20" ? n20Words : words);
+
+            // Старые сохранения N20 могли содержать предыдущую структуру
+            // задания (before/after). Такое состояние нельзя восстанавливать: 
+            // оно ломает отображение новой N20. В этом случае начинаем N20
+            // с чистого цикла, используя только актуальные задания.
+            if (topicKey === "n20" && state.taskSchemaVersion !== 2) {
+                // Старые сохранения N20 относятся к предыдущей структуре
+                // задания. Не восстанавливаем их, чтобы они не ломали новую N20.
+                return null;
+            }
+
+            const restoreWord = index =>
+                Number.isInteger(index) &&
+                index >= 0 &&
+                index < wordSet.length
+                    ? wordSet[index]
+                    : null;
+
+            const restoredActiveWords =
+                Array.isArray(state.activeWords)
+                    ? state.activeWords
+                        .map(restoreWord)
+                        .filter(Boolean)
+                    : [];
+
+            const restoredDelayedWords =
+                Array.isArray(state.delayedWords)
+                    ? state.delayedWords
+                        .map(item => ({
+                            word: restoreWord(item.index),
+                            delay: Number(item.delay)
+                        }))
+                        .filter(item =>
+                            item.word &&
+                            Number.isFinite(item.delay)
+                        )
+                    : [];
+
+            const restoredCurrentWord =
+                restoreWord(state.currentWordIndex);
+
+            if (
+                restoredActiveWords.length === 0 &&
+                restoredDelayedWords.length === 0 &&
+                !restoredCurrentWord
+            ) {
+                return null;
+            }
+
+            return {
+                wordSet,
+                correctCount: Number(state.correctCount) || 0,
+                wrongCount: Number(state.wrongCount) || 0,
+                currentRoundNumber: Number(state.currentRoundNumber) || 0,
+                activeWords: restoredActiveWords,
+                delayedWords: restoredDelayedWords,
+                currentWord: restoredCurrentWord,
+                currentWordWasPreviouslyWrong: Boolean(state.currentWordWasPreviouslyWrong),
+                resumeAfterAnswer: Boolean(state.resumeAfterAnswer),
+                selectedN20: typeof state.selectedN20 === "string" ? state.selectedN20 : ""
+            };
+        } catch (error) {
+            console.warn("Не удалось загрузить прогресс:", error);
+            return null;
+        }
+    }
+
+    function clearProgress() {
+        try {
+            localStorage.removeItem(PROGRESS_STORAGE_KEY);
+        } catch (error) {
+            console.warn("Не удалось удалить прогресс:", error);
+        }
+    }
+
+
+    /* =========================================================
+       DOM
+       ========================================================= */
+
+    const homeScreen =
+        document.getElementById("homeScreen");
+
+    const topicsScreen =
+        document.getElementById("topicsScreen");
+
+    const trainingScreen =
+        document.getElementById("trainingScreen");
+
+
+    const startTrainingButton =
+        document.getElementById("startTrainingButton");
+
+    const prePriTopic =
+        document.getElementById("prePriTopic");
+
+    const dictionaryTopic =
+        document.getElementById("dictionaryTopic");
+
+    const n20Topic =
+        document.getElementById("n20Topic");
+
+
+    const topicsBackButton =
+        document.getElementById("topicsBackButton");
+
+    const swipeToggleButton =
+        document.getElementById("swipeToggleButton");
+
+    const trainingBackButton =
+        document.getElementById("trainingBackButton");
+
+
+    const wordElement =
+        document.getElementById("word");
+
+    const wordArea =
+        document.getElementById("wordArea");
+
+    const trainingTop = document.querySelector(".training-top");
+    const statsElement = document.querySelector(".stats");
+
+    const resultElement =
+        document.getElementById("result");
+
+    const resultLabel =
+        document.getElementById("resultLabel");
+
+    const resultWord =
+        document.getElementById("resultWord");
+
+
+    const correctStat =
+        document.getElementById("correctStat");
+
+    const wrongStat =
+        document.getElementById("wrongStat");
+
+    const totalStat =
+        document.getElementById("totalStat");
+
+
+    const buttonE =
+        document.getElementById("buttonE");
+
+    const buttonI =
+        document.getElementById("buttonI");
+
+    const buttonThird =
+        document.getElementById("buttonThird");
+
+    const n20NumberButtons = [
+        document.getElementById("buttonOne"),
+        document.getElementById("buttonTwo"),
+        document.getElementById("buttonThree"),
+        document.getElementById("buttonFour"),
+        document.getElementById("buttonFive"),
+        document.getElementById("buttonSix"),
+        document.getElementById("buttonSeven"),
+        document.getElementById("buttonEight"),
+        document.getElementById("buttonNine")
+    ];
+
+    const n20Submit = document.getElementById("n20Submit");
+
+    const answerButtons = [
+        buttonE,
+        buttonI,
+        buttonThird
+    ];
+
+    const answerButtonsContainer =
+        document.querySelector(".answer-buttons");
+
+
+    /* =========================================================
+       УПРАВЛЕНИЕ СВАЙПАМИ
+       ========================================================= */
+
+    const SWIPE_SETTING_KEY = "ballUp_swipes_enabled_v1";
+    let swipesEnabled = false;
+    let swipeTouchStartX = 0;
+    let swipeTouchStartY = 0;
+    let swipeTouchTracking = false;
+
+    function loadSwipeSetting() {
+        try {
+            swipesEnabled = localStorage.getItem(SWIPE_SETTING_KEY) !== "0";
+        } catch (error) {
+            swipesEnabled = false;
+        }
+
+        updateSwipeToggleButton();
+    }
+
+    function updateSwipeToggleButton() {
+        if (!swipeToggleButton) {
+            return;
+        }
+
+        swipeToggleButton.classList.toggle("is-enabled", swipesEnabled);
+        swipeToggleButton.setAttribute(
+            "aria-label",
+            swipesEnabled ? "Отключить свайпы" : "Включить свайпы"
+        );
+        swipeToggleButton.setAttribute(
+            "title",
+            swipesEnabled ? "Отключить свайпы" : "Включить свайпы"
+        );
+    }
+
+    function setSwipesEnabled(value) {
+        swipesEnabled = Boolean(value);
+
+        try {
+            localStorage.setItem(
+                SWIPE_SETTING_KEY,
+                swipesEnabled ? "1" : "0"
+            );
+        } catch (error) {
+            console.warn("Не удалось сохранить настройку свайпов:", error);
+        }
+
+        updateSwipeToggleButton();
+        triggerHaptic();
+    }
+
+    function handleSwipeTouchStart(event) {
+        if (swipesEnabled || !event.touches || !event.touches[0]) {
+            return;
+        }
+
+        swipeTouchStartX = event.touches[0].clientX;
+        swipeTouchStartY = event.touches[0].clientY;
+        swipeTouchTracking = true;
+    }
+
+    function handleSwipeTouchMove(event) {
+        if (swipesEnabled || !swipeTouchTracking || !event.touches || !event.touches[0]) {
+            return;
+        }
+
+        const dx = event.touches[0].clientX - swipeTouchStartX;
+        const dy = event.touches[0].clientY - swipeTouchStartY;
+
+        // Блокируем именно горизонтальный свайп, не ломая обычные нажатия.
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+            event.preventDefault();
+        }
+    }
+
+    function handleSwipeTouchEnd(event) {
+        if (!swipesEnabled || !swipeTouchTracking) {
+            swipeTouchTracking = false;
+            return;
+        }
+
+        const touch = event.changedTouches && event.changedTouches[0];
+        if (!touch) {
+            swipeTouchTracking = false;
+            return;
+        }
+
+        const dx = touch.clientX - swipeTouchStartX;
+        const dy = touch.clientY - swipeTouchStartY;
+        swipeTouchTracking = false;
+
+        // Только явный горизонтальный свайп слева направо.
+        if (dx < 90 || Math.abs(dx) <= Math.abs(dy) * 1.35) {
+            return;
+        }
+
+        // Не перехватываем свайп внутри полей/кнопок.
+        if (event.target && event.target.closest && event.target.closest("button, input, textarea, select, a")) {
+            return;
+        }
+
+        if (activeScreen === trainingScreen) {
+            trainingBackButton.click();
+        } else if (activeScreen === topicsScreen) {
+            topicsBackButton.click();
+        }
+    }
+
+    swipeToggleButton.addEventListener(
+        "click",
+        () => {
+            setSwipesEnabled(!swipesEnabled);
+        }
+    );
+
+    document.addEventListener("touchstart", handleSwipeTouchStart, { passive: true });
+    document.addEventListener("touchmove", handleSwipeTouchMove, { passive: false });
+    document.addEventListener("touchend", handleSwipeTouchEnd, { passive: true });
+
+    loadSwipeSetting();
+
+
+    /* =========================================================
+       ЭКРАНЫ
+       ========================================================= */
+
+    let activeScreen = document.querySelector(".screen.active") || homeScreen;
+    let screenTransitionTimer = null;
+
+    function showScreen(screen) {
+
+        if (!screen || screen === activeScreen) {
+            return;
+        }
+
+        const screens = [
+            homeScreen,
+            topicsScreen,
+            trainingScreen
+        ];
+
+        const oldScreen = activeScreen;
+        const oldIndex = screens.indexOf(oldScreen);
+        const newIndex = screens.indexOf(screen);
+        const goingForward = newIndex > oldIndex;
+
+        if (screenTransitionTimer) {
+            clearTimeout(screenTransitionTimer);
+        }
+
+        document
+            .querySelectorAll(".screen")
+            .forEach(item => {
+                item.classList.remove(
+                    "active",
+                    "transition-forward",
+                    "transition-back",
+                    "leaving-forward",
+                    "leaving-back"
+                );
+            });
+
+        // Сначала ставим новый экран в стартовую позицию.
+        screen.classList.add(
+            goingForward
+                ? "transition-forward"
+                : "transition-back"
+        );
+
+        // Затем одним кадром запускаем плавную spring-анимацию.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                screen.classList.remove(
+                    "transition-forward",
+                    "transition-back"
+                );
+                screen.classList.add("active");
+
+                if (oldScreen) {
+                    oldScreen.classList.add(
+                        goingForward
+                            ? "leaving-forward"
+                            : "leaving-back"
+                    );
+                }
+            });
+        });
+
+        activeScreen = screen;
+
+        screenTransitionTimer = setTimeout(() => {
+            if (oldScreen && oldScreen !== activeScreen) {
+                oldScreen.classList.remove(
+                    "active",
+                    "leaving-forward",
+                    "leaving-back"
+                );
+            }
+            screenTransitionTimer = null;
+        }, 680);
+    }
+
+
+    /* =========================================================
+       HOME → TOPICS
+       ========================================================= */
+
+    startTrainingButton.addEventListener(
+        "click",
+        () => {
+
+            showScreen(topicsScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       TOPICS → HOME
+       ========================================================= */
+
+    topicsBackButton.addEventListener(
+        "click",
+        () => {
+
+            showScreen(homeScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       TRAINING → TOPICS
+       ========================================================= */
+
+    trainingBackButton.addEventListener(
+        "click",
+        () => {
+
+            /*
+               При выходе из тренировки
+               состояние текущей попытки сбрасывается.
+            */
+
+            answerLocked = true;
+            saveProgress();
+            isTrainingActive = false;
+
+            showScreen(topicsScreen);
+
+        }
+    );
+
+
+    /* =========================================================
+       НАЧАТЬ ПРЕ-/ПРИ-
+       ========================================================= */
+
+    prePriTopic.addEventListener(
+        "click",
+        () => {
+
+            startTraining(words);
+
+        }
+    );
+
+
+    dictionaryTopic.addEventListener(
+        "click",
+        () => {
+
+            startTraining(dictionaryWords);
+
+        }
+    );
+
+
+    n20Topic.addEventListener(
+        "click",
+        () => {
+
+            startTraining(n20Words);
+
+        }
+    );
+
+
+    /* =========================================================
+       ВСТРЯСКА ТЕЛЕФОНА → НОВЫЙ ЦИКЛ
+       ========================================================= */
+
+    function resetCurrentTopicCycleByShake() {
+
+        if (!isTrainingActive || !currentTopicKey) {
+            return;
+        }
+
+        if (completedTopicResetTimer) {
+            clearTimeout(completedTopicResetTimer);
+            completedTopicResetTimer = null;
+        }
+
+        currentWordSet =
+            currentTopicKey === "dictionary"
+                ? dictionaryWords
+                : (currentTopicKey === "n20" ? n20Words : words);
+
+        activeWords = [...currentWordSet];
+        delayedWords = [];
+        currentWord = null;
+        currentWordWasPreviouslyWrong = false;
+        currentRoundNumber = 0;
+        correctCount = 0;
+        wrongCount = 0;
+        resumeAfterAnswer = false;
+        answerLocked = false;
+
+        shuffle(activeWords);
+        saveProgress();
+        updateStats();
+        clearResult();
+        resetButtons();
+
+        // Если встряска произошла на экране тренировки — сразу показываем
+        // первое слово нового цикла.
+        if (activeScreen === trainingScreen) {
+            // Перезапускаем анимацию каждый раз, даже при быстрых двойных нажатиях.
+            trainingScreen.classList.remove("cycle-shake");
+            void trainingScreen.offsetWidth;
+            trainingScreen.classList.add("cycle-shake");
+            setTimeout(() => trainingScreen.classList.remove("cycle-shake"), 460);
+
+            nextWord();
+        }
+    }
+
+    async function enableShakeDetection() {
+
+        if (shakeListenerAttached || !isTrainingActive) {
+            return;
+        }
+
+        // iOS требует явного разрешения на датчики движения.
+        if (
+            typeof DeviceMotionEvent !== "undefined" &&
+            typeof DeviceMotionEvent.requestPermission === "function"
+        ) {
+            try {
+                const permission = await DeviceMotionEvent.requestPermission();
+                if (permission !== "granted") {
+                    return;
+                }
+            } catch (error) {
+                console.warn("Не удалось получить доступ к датчику движения", error);
+                return;
+            }
+        }
+
+        if (typeof DeviceMotionEvent === "undefined") {
+            return;
+        }
+
+        window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
+        shakeListenerAttached = true;
+    }
+
+    function triggerHaptic() {
+
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+            return;
+        }
+
+        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+            navigator.vibrate([45, 35, 45]);
+        }
+    }
+
+    // Короткая слабая вибрация только при неправильном ответе.
+    function triggerWrongHaptic() {
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred("light");
+            return;
+        }
+
+        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+            navigator.vibrate(35);
+        }
+    }
+
+
+    function handleDeviceMotion(event) {
+        if (!isTrainingActive || answerLocked || !currentWord) {
+            return;
+        }
+
+        // Не определяем направление по одному замеру: акселерометр шумный.
+        // Коротко накапливаем горизонтальное движение и выбираем ту сторону,
+        // у которой за весь жест была большая суммарная сила.
+        const acceleration = event.acceleration || event.accelerationIncludingGravity;
+        if (!acceleration) {
+            return;
+        }
+
+        const x = Number(acceleration.x) || 0;
+        const now = Date.now();
+
+        if (Math.abs(x) >= SHAKE_THRESHOLD) {
+            if (shakeGestureStart === 0) {
+                shakeGestureStart = now;
+                shakePositive = 0;
+                shakeNegative = 0;
+            }
+
+            // Интегрируем модуль движения по короткому окну, чтобы единичный
+            // шумовой пик не смог изменить направление.
+            if (x > 0) {
+                shakePositive += Math.abs(x);
+            } else {
+                shakeNegative += Math.abs(x);
+            }
+        }
+
+        if (shakeGestureStart === 0) {
+            return;
+        }
+
+        const gestureAge = now - shakeGestureStart;
+        const enoughMovement = shakePositive + shakeNegative >= SHAKE_TOTAL_THRESHOLD;
+        const gestureFinished = gestureAge >= SHAKE_GESTURE_WINDOW;
+
+        if (!enoughMovement && !gestureFinished) {
+            return;
+        }
+
+        const positive = shakePositive;
+        const negative = shakeNegative;
+        shakeGestureStart = 0;
+        shakePositive = 0;
+        shakeNegative = 0;
+
+        if (now - lastShakeTime < SHAKE_COOLDOWN) {
+            return;
+        }
+
+        // Если движения в обе стороны почти одинаковые, жест неоднозначный —
+        // лучше не выбирать случайный ответ.
+        const difference = Math.abs(positive - negative);
+        const total = positive + negative;
+        if (total < SHAKE_TOTAL_THRESHOLD || difference < total * SHAKE_DIRECTION_MARGIN) {
+            return;
+        }
+
+        lastShakeTime = now;
+
+        const visibleButtons = answerButtons.filter(
+            button => button.style.display !== "none"
+        );
+
+        if (visibleButtons.length < 2) {
+            return;
+        }
+
+        // Большая накопленная сила определяет направление: вправо — первая
+        // кнопка, влево — вторая, как в предыдущей логике приложения.
+        const selectedButton = positive > negative
+            ? visibleButtons[0]
+            : visibleButtons[1];
+
+        const selectedLetter = selectedButton.dataset.letter;
+        if (selectedLetter === undefined) {
+            return;
+        }
+
+        triggerHaptic();
+        checkAnswer(selectedLetter);
+    }
+
+    function handleTrainingFreeFieldTap(event) {
+
+        if (!isTrainingActive) {
+            return;
+        }
+
+        // Двойное нажатие по кнопкам не должно сбрасывать тренировку.
+        if (event.target.closest("button, a, input, select, textarea, .answer-buttons")) {
+            return;
+        }
+
+        const now = Date.now();
+        const x = event.clientX || 0;
+        const y = event.clientY || 0;
+        const timeDelta = now - lastFreeTapTime;
+        const distance = Math.hypot(x - lastFreeTapX, y - lastFreeTapY);
+
+        if (timeDelta <= DOUBLE_TAP_DELAY && distance <= DOUBLE_TAP_DISTANCE) {
+            lastFreeTapTime = 0;
+            lastFreeTapX = 0;
+            lastFreeTapY = 0;
+
+            triggerHaptic();
+            resetCurrentTopicCycleByShake();
+            return;
+        }
+
+        lastFreeTapTime = now;
+        lastFreeTapX = x;
+        lastFreeTapY = y;
+    }
+
+
+    trainingScreen.addEventListener("pointerup", handleTrainingFreeFieldTap);
+
+
+    /* =========================================================
+       СВАЙП СЛЕВА НАПРАВО — НАЗАД
+       ========================================================= */
+
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeStartTime = 0;
+
+    trainingScreen.addEventListener("touchstart", event => {
+        if (event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        swipeStartX = touch.clientX;
+        swipeStartY = touch.clientY;
+        swipeStartTime = Date.now();
+    }, { passive: true });
+
+    trainingScreen.addEventListener("touchend", event => {
+        if (!swipeStartTime || event.changedTouches.length !== 1) return;
+
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - swipeStartX;
+        const dy = touch.clientY - swipeStartY;
+        const duration = Date.now() - swipeStartTime;
+
+        swipeStartTime = 0;
+
+        // Только явный свайп слева направо.
+        if (dx < 90 || dx < Math.abs(dy) * 1.35 || duration > 700) return;
+
+        // Не срабатывает при свайпе по кнопке/элементу управления.
+        const target = event.target;
+        if (target.closest("button, a, input, select, textarea, .answer-buttons")) return;
+
+        triggerHaptic();
+        if (typeof showScreen === "function") {
+            showScreen(topicsScreen);
+        }
+    }, { passive: true });
+
+
+/* =========================================================
+       НАЧАЛО ТРЕНИРОВКИ
+       ========================================================= */
+
+    function startTraining(wordSet = words) {
+
+        if (completedTopicResetTimer) {
+            clearTimeout(completedTopicResetTimer);
+            completedTopicResetTimer = null;
+        }
+
+        currentTopicKey = topicKeys.get(wordSet) || "prePri";
+        isTrainingActive = true;
+        enableShakeDetection();
+
+        const saved = loadProgress(currentTopicKey);
+
+        if (saved) {
+            correctCount = saved.correctCount;
+            wrongCount = saved.wrongCount;
+            currentRoundNumber = saved.currentRoundNumber;
+            currentWordSet = saved.wordSet;
+            activeWords = saved.activeWords;
+            delayedWords = saved.delayedWords;
+            currentWord = saved.currentWord;
+            currentWordWasPreviouslyWrong = saved.currentWordWasPreviouslyWrong;
+            resumeAfterAnswer = saved.resumeAfterAnswer;
+            answerLocked = false;
+
+            /*
+               Для N20 сохраняем текущее задание и выбранные жёлтые
+               номера при выходе из тренировки. Поэтому после повторного
+               входа пользователь возвращается ровно к той же попытке.
+            */
+            if (currentTopicKey === "n20" && currentWord && !currentWordWasPreviouslyWrong) {
+                updateStats();
+                showScreen(trainingScreen);
+                renderWord(currentWord);
+
+                n20NumberButtons.forEach(button => {
+                    if (saved.selectedN20.includes(button.dataset.letter)) {
+                        button.classList.add("selected");
+                    }
+                });
+
+                saveProgress();
+                return;
+            }
+
+            /*
+               Для остальных случаев сохраняем прежнюю логику:
+               незавершённое слово не показываем повторно.
+            */
+            if (currentWord) {
+                if (currentWordWasPreviouslyWrong) {
+                    currentWord = null;
+                } else {
+                    const alreadyActive = activeWords.includes(currentWord);
+                    const alreadyDelayed = delayedWords.some(
+                        item => item.word === currentWord
+                    );
+
+                    if (!alreadyActive && !alreadyDelayed) {
+                        activeWords.push(currentWord);
+                    }
+
+                    currentWord = null;
+                }
+            }
+
+            currentWordWasPreviouslyWrong = false;
+            resumeAfterAnswer = false;
+
+            updateStats();
+            showScreen(trainingScreen);
+            nextWord();
+
+            return;
+        }
+
+        correctCount = 0;
+
+        wrongCount = 0;
+
+        currentRoundNumber = 0;
+
+        answerLocked = false;
+        resumeAfterAnswer = false;
+
+
+        /*
+           Создаём независимую копию массива.
+
+           Исходный набор слов никогда не изменяется.
+        */
+
+        currentWordSet = wordSet;
+        activeWords = [...wordSet];
+
+        delayedWords = [];
+
+        currentWord = null;
+        currentWordWasPreviouslyWrong = false;
+
+
+        /*
+           Перемешиваем все слова.
+        */
+
+        shuffle(activeWords);
+
+
+        updateStats();
+
+        showScreen(trainingScreen);
+
+        nextWord();
+
+    }
+
+
+    /* =========================================================
+       RANDOM SHUFFLE
+       ========================================================= */
+
+    function shuffle(array) {
+
+        for (
+            let i = array.length - 1;
+            i > 0;
+            i--
+        ) {
+
+            const j =
+                Math.floor(Math.random() * (i + 1));
+
+            [
+                array[i],
+                array[j]
+            ] =
+            [
+                array[j],
+                array[i]
+            ];
+
+        }
+
+        return array;
+    }
+
+
+    /* =========================================================
+       СЛУЧАЙНОЕ ЧИСЛО 10–20
+       ========================================================= */
+
+    function randomDelay() {
+
+        return Math.floor(
+            Math.random() * 11
+        ) + 10;
+
+    }
+
+
+    /* =========================================================
+       СЛЕДУЮЩЕЕ СЛОВО
+       ========================================================= */
+
+    function nextWord() {
+
+        answerLocked = false;
+
+        resetButtons();
+
+        clearResult();
+
+
+        /*
+           Если больше нет активных слов
+           и нет отложенных —
+           тренировка закончена.
+        */
+
+        if (
+            activeWords.length === 0 &&
+            delayedWords.length === 0
+        ) {
+
+            finishTraining();
+
+            return;
+
+        }
+
+
+        currentRoundNumber++;
+
+
+        /*
+           Если обычные задания закончились,
+           переходим в режим повторения ошибок.
+
+           В этом режиме показываем ТОЛЬКО те слова,
+           на которых раньше была ошибка. Задержка
+           между ними больше не нужна.
+        */
+
+        if (activeWords.length === 0 && delayedWords.length > 0) {
+
+            /*
+               Режим повторения только ошибок.
+
+               Если ошибочных слов несколько, нельзя сразу
+               показывать то же самое слово, на котором была
+               только что допущена ошибка. Сначала формируем
+               список всех других ошибочных слов и выбираем
+               следующее случайно из него.
+
+               Если ошибочное слово осталось всего одно,
+               повторить именно его неизбежно — других вариантов
+               просто нет.
+            */
+            let repeatCandidates = delayedWords;
+
+            if (delayedWords.length > 1 && currentWord) {
+                repeatCandidates = delayedWords.filter(
+                    item => item.word !== currentWord
+                );
+            }
+
+            const randomIndex = Math.floor(
+                Math.random() * repeatCandidates.length
+            );
+
+            currentWord =
+                repeatCandidates[randomIndex].word;
+
+            currentWordWasPreviouslyWrong = true;
+
+            renderWord(currentWord);
+            updateStats();
+            saveProgress();
+
+            return;
+        }
+
+
+        /*
+           Пока есть обычные задания,
+           отложенные ошибки ждут своего повтора.
+        */
+
+        for (
+            const item of delayedWords
+        ) {
+
+            item.delay--;
+
+        }
+
+
+        /*
+           Слова, которым уже пора возвращаться.
+        */
+
+        const readyWords =
+            delayedWords.filter(
+                item => item.delay <= 0
+            );
+
+
+        /*
+           ВАЖНО: готовое слово не удаляем из delayedWords до
+           момента правильного ответа. Оно всё ещё считается
+           нерешённым, поэтому должно входить в "Всего".
+           После ошибки checkAnswer() заново поставит его
+           в delayedWords с новой задержкой, а после правильного
+           ответа removeFromDelayedWords() удалит его окончательно.
+        */
+
+        let selectedWord = null;
+
+
+        /*
+           Если есть слово, которое пора вернуть,
+           выбираем одно случайное.
+        */
+
+        if (readyWords.length > 0) {
+
+            const randomIndex =
+                Math.floor(
+                    Math.random() *
+                    readyWords.length
+                );
+
+            selectedWord =
+                readyWords[randomIndex].word;
+
+            currentWordWasPreviouslyWrong = true;
+
+
+            /*
+               Все готовые слова уже остаются в delayedWords.
+               Выбранное тоже остаётся там до ответа, чтобы
+               "Всего" не уменьшалось просто из-за показа слова.
+            */
+
+        }
+
+
+        /*
+           Если готового слова нет,
+           берём случайное из активных.
+        */
+
+        if (!selectedWord) {
+
+            if (activeWords.length > 0) {
+
+                const randomIndex =
+                    Math.floor(
+                        Math.random() *
+                        activeWords.length
+                    );
+
+                selectedWord =
+                    activeWords[randomIndex];
+
+                currentWordWasPreviouslyWrong = false;
+
+            }
+
+        }
+
+
+        /*
+           Теоретически selectedWord
+           всегда должен существовать.
+        */
+
+        if (!selectedWord) {
+
+            finishTraining();
+
+            return;
+
+        }
+
+
+        currentWord = selectedWord;
+        resumeAfterAnswer = false;
+
+        renderWord(currentWord);
+        saveProgress();
+
+    }
+
+
+    /* =========================================================
+       ОТОБРАЖЕНИЕ СЛОВА
+       ========================================================= */
+
+    function renderWord(word) {
+
+        if (isN20Task(word)) {
+            wordElement.classList.add("n20-fit");
+            wordElement.innerHTML =
+                `<span class="word-main">${escapeHtml(word.text || word.full || "")}</span>`;
+            configureAnswerButtons(word.options);
+            fitTaskText();
+            return;
+        }
+
+        wordElement.classList.remove("n20-fit");
+        wordArea.classList.remove("n20-layout");
+        wordArea.style.position = "";
+        wordArea.style.top = "";
+        wordArea.style.height = "";
+        wordArea.style.minHeight = "";
+        wordArea.style.left = "";
+        wordArea.style.width = "";
+        wordElement.style.width = "";
+        wordElement.style.maxWidth = "";
+        wordElement.style.height = "";
+        wordElement.style.minHeight = "";
+        wordElement.style.fontSize = "";
+
+        const newHtml =
+            `<span class="word-switch-new"><span class="word-main">${escapeHtml(word.before)}<span class="missing">_</span>${escapeHtml(word.after)}</span>` +
+            (word.note
+                ? `<span class="word-note">${escapeHtml(word.note)}</span>`
+                : "") +
+            `</span>`;
+
+        const previous = wordElement.querySelector(".word-switch-new");
+
+        if (previous) {
+            const previousHtml = previous.outerHTML;
+            wordElement.innerHTML =
+                `<span class="word-switch-old">${previousHtml}</span>${newHtml}`;
+
+            const oldLayer = wordElement.querySelector(".word-switch-old");
+            oldLayer?.addEventListener("animationend", () => {
+                oldLayer.remove();
+            }, { once: true });
+        } else {
+            wordElement.innerHTML = newHtml;
+        }
+
+        configureAnswerButtons(word.options);
+    }
+
+    /* =========================================================
+       АДАПТИВНЫЙ РАЗМЕР ТЕКСТА ЗАДАНИЯ
+       ========================================================= */
+
+    function fitTaskText() {
+        if (!currentWord || !isN20Task()) return;
+
+        const topRect = trainingTop.getBoundingClientRect();
+        const statsRect = statsElement.getBoundingClientRect();
+        const bottomRect = document.querySelector(".training-bottom").getBoundingClientRect();
+
+        // Строгое пространство между счётчиками и кнопками.
+        // Одинаковый зазор сверху и снизу = текст по центру.
+        const edgeGap = 18;
+        const safeTop = statsRect.bottom + edgeGap;
+        const safeBottom = bottomRect.top - edgeGap;
+        const safeHeight = Math.max(120, safeBottom - safeTop);
+
+        // Максимально возможная область текста: почти вся ширина экрана,
+        // но с безопасными боковыми полями. Чем больше доступная область,
+        // тем меньше приходится уменьшать шрифт.
+        const safeWidth = Math.max(240, Math.min(
+            topRect.width * 0.90,
+            900,
+            window.innerWidth * 0.90
+        ));
+
+        wordArea.classList.add("n20-layout");
+        wordArea.style.position = "absolute";
+        wordArea.style.left = "0px";
+        wordArea.style.top = `${safeTop - topRect.top}px`;
+        wordArea.style.width = `${topRect.width}px`;
+        wordArea.style.height = `${safeHeight}px`;
+        wordArea.style.minHeight = `${safeHeight}px`;
+
+        // Результат получает отдельную нижнюю область.
+        // Поэтому текст никогда не может оказаться под результатом.
+        // Сначала резервируем место под две строки результата,
+        // а оставшееся пространство полностью отдаём заданию.
+        const resultReserve = 54;
+        const textHeight = Math.max(100, safeHeight - resultReserve);
+
+        wordElement.style.width = `${safeWidth}px`;
+        wordElement.style.maxWidth = `${safeWidth}px`;
+        wordElement.style.height = `${safeHeight}px`;
+        wordElement.style.minHeight = `${safeHeight}px`;
+        wordElement.style.fontSize = "64px";
+
+        // Находим максимально крупный шрифт, который реально помещает
+        // весь текст и по ширине, и по высоте.
+        let low = 24;
+        let high = 64;
+        let best = 24;
+
+        for (let i = 0; i < 12; i++) {
+            const mid = (low + high) / 2;
+            wordElement.style.fontSize = `${mid}px`;
+
+            const main = wordElement.querySelector(".word-main");
+            const fitsWidth = main ? main.scrollWidth <= safeWidth + 1 : true;
+            const fitsHeight = wordElement.scrollHeight <= textHeight + 1;
+
+            if (fitsWidth && fitsHeight) {
+                best = mid;
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+
+        wordElement.style.fontSize = `${Math.floor(best * 10) / 10}px`;
+    }
+
+    function scheduleTaskTextFit() {
+        if (!currentWord || !isN20Task()) return;
+        requestAnimationFrame(() => requestAnimationFrame(fitTaskText));
+    }
+
+    window.addEventListener("resize", scheduleTaskTextFit);
+    window.addEventListener("orientationchange", () => {
+        setTimeout(scheduleTaskTextFit, 80);
+    });
+
+    if (window.ResizeObserver) {
+        const trainingObserver = new ResizeObserver(() => {
+            if (currentWord && isN20Task()) {
+                scheduleTaskTextFit();
+            }
+        });
+        trainingObserver.observe(trainingTop);
+        trainingObserver.observe(wordElement);
+    }
+
+    function isN20Task(word = currentWord) {
+        return currentTopicKey === "n20" && word?.task_id?.startsWith("n20_");
+    }
+
+    function getN20SelectedAnswer() {
+        return n20NumberButtons
+            .filter(button => button.classList.contains("selected"))
+            .map(button => button.dataset.letter)
+            .join("");
+    }
+
+    function checkN20Answer() {
+        if (answerLocked || !currentWord || !isN20Task()) return;
+
+        const selected = getN20SelectedAnswer();
+
+        // Нельзя подтвердить пустой ответ.
+        if (!selected) {
+            triggerHaptic();
+            return;
+        }
+
+        const correct = String(currentWord.correct);
+        const selectedSet = new Set(selected.split(""));
+        const correctSet = new Set(correct.split(""));
+
+        // Порядок нажатия не должен влиять на ответ: сравниваем
+        // именно набор выбранных номеров.
+        const isCorrect =
+            selectedSet.size === correctSet.size &&
+            [...selectedSet].every(digit => correctSet.has(digit));
+
+        answerLocked = true;
+
+        n20NumberButtons.forEach(button => {
+            const digit = button.dataset.letter;
+            button.classList.remove("selected");
+
+            if (correctSet.has(digit) && selectedSet.has(digit)) {
+                // Номер одновременно правильный и выбранный — зелёный.
+                button.classList.add("correct-answer");
+            } else if (correctSet.has(digit) || selectedSet.has(digit)) {
+                // Если правильный номер НЕ выбран — он тоже считается ошибкой.
+                // Если выбран лишний номер — он также считается ошибкой.
+                button.classList.add("wrong-answer");
+            }
+
+            button.classList.add("disabled");
+        });
+
+        if (isCorrect) {
+            const solvedWord = currentWord;
+
+            if (!currentWordWasPreviouslyWrong) {
+                correctCount++;
+            }
+
+            removeFromActiveWords(currentWord);
+            removeFromDelayedWords(currentWord);
+            updateStats();
+
+            currentWord = null;
+            currentWordWasPreviouslyWrong = false;
+            resumeAfterAnswer = true;
+            saveProgress();
+
+            resultElement.className = "result correct-result";
+            resultLabel.textContent = "Правильно";
+            resultWord.textContent = `Верные: ${correct.split("").join(", ")}; Неверные: —`;
+        } else {
+            if (!currentWordWasPreviouslyWrong) {
+                wrongCount++;
+            }
+
+            removeFromActiveWords(currentWord);
+            removeFromDelayedWords(currentWord);
+            delayedWords.push({ word: currentWord, delay: randomDelay() });
+            currentWordWasPreviouslyWrong = true;
+            resumeAfterAnswer = true;
+
+            updateStats();
+            saveProgress();
+
+            triggerWrongHaptic();
+
+        resultElement.className = "result wrong-result";
+            resultLabel.textContent = "Неправильно";
+            // Разделяем ошибку на три случая:
+            // 1) пользователь только не выбрал нужные цифры -> «Не хватает»;
+            // 2) пользователь только выбрал лишние цифры -> «Перебор»;
+            // 3) есть и пропущенные, и лишние -> обычное «Неверные».
+            const missingDigits = [...correctSet]
+                .filter(digit => !selectedSet.has(digit))
+                .sort((a, b) => Number(a) - Number(b));
+
+            const extraDigits = [...selectedSet]
+                .filter(digit => !correctSet.has(digit))
+                .sort((a, b) => Number(a) - Number(b));
+
+            const rightDigits = [...selectedSet]
+                .filter(digit => correctSet.has(digit))
+                .sort((a, b) => Number(a) - Number(b));
+
+            let errorLabel = "Неверные";
+            let errorDigits = [...new Set([...extraDigits, ...missingDigits])]
+                .sort((a, b) => Number(a) - Number(b));
+
+            if (missingDigits.length > 0 && extraDigits.length === 0) {
+                errorLabel = "Не хватает";
+                errorDigits = missingDigits;
+            } else if (extraDigits.length > 0 && missingDigits.length === 0) {
+                errorLabel = "Перебор";
+                errorDigits = extraDigits;
+            }
+
+            if (errorLabel === "Перебор") {
+                resultWord.textContent = `Верные: ${rightDigits.join(", ") || "—"}; Перебор: ${errorDigits.join(", ")}`;
+            } else if (errorLabel === "Не хватает") {
+                resultWord.textContent = `Верные: ${rightDigits.join(", ") || "—"}; Не хватает: ${errorDigits.join(", ")}`;
+            } else {
+                resultWord.textContent = `Верные: ${rightDigits.join(", ") || "—"}; Неверные: ${errorDigits.join(", ") || "—"}`;
+            }
+
+            sendWrongAnswer(currentWord.full || currentWord.text || "");
+        }
+
+        // Для N20 даём примерно в два раза больше времени на просмотр результата.
+        setTimeout(() => nextWord(), 2000);
+    }
+
+    function configureAnswerButtons(options) {
+
+        const n20 = isN20Task();
+        const labels = options || ["е", "и"];
+
+        answerButtonsContainer.classList.toggle("n20-mode", n20);
+        answerButtonsContainer.classList.toggle(
+            "three-buttons",
+            !n20 && labels.length === 3
+        );
+
+        n20NumberButtons.forEach(button => {
+            button.style.display = n20 ? "flex" : "none";
+            button.classList.remove("selected", "correct-answer", "wrong-answer", "disabled");
+        });
+        n20Submit.style.display = n20 ? "flex" : "none";
+        n20Submit.classList.remove("correct-answer", "wrong-answer", "disabled");
+
+        answerButtons.forEach((button, index) => {
+
+            const option = labels[index];
+
+            button.classList.remove(
+                "correct-answer",
+                "wrong-answer",
+                "disabled"
+            );
+
+            if (n20 || option === undefined) {
+                button.style.display = "none";
+                return;
+            }
+
+            button.style.display = "flex";
+            button.dataset.letter = option;
+            button.textContent = option === "" ? "" : option.toUpperCase();
+            button.setAttribute(
+                "aria-label",
+                option === "" ? "пусто" : option.toUpperCase()
+            );
+        });
+    }
+
+
+    /* =========================================================
+       ОТВЕТ
+       ========================================================= */
+
+    answerButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    if (answerLocked) {
+                        return;
+                    }
+
+                    if (!currentWord) {
+                        return;
+                    }
+
+                    if (isN20Task()) {
+                        button.classList.toggle("selected");
+                        saveProgress();
+                        return;
+                    }
+
+                    const selectedLetter =
+                        button.dataset.letter;
+
+                    checkAnswer(
+                        selectedLetter
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    // N20: отдельная кнопка подтверждения выбранных позиций.
+    n20NumberButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            if (answerLocked || !currentWord || !isN20Task()) return;
+            button.classList.toggle("selected");
+            saveProgress();
+        });
+    });
+
+    n20Submit.addEventListener("click", () => {
+        checkN20Answer();
+    });
+
+
+    /* =========================================================
+       ПРОВЕРКА
+       ========================================================= */
+
+    function checkAnswer(letter) {
+
+        answerLocked = true;
+
+
+        /*
+           Сразу вставляем выбранную букву.
+        */
+
+        const visibleLetter =
+            letter === "" || letter === "/"
+                ? ""
+                : letter;
+
+        wordElement.innerHTML =
+            `<span class="word-main">${escapeHtml(currentWord.before)}<span class="missing">${escapeHtml(visibleLetter)}</span>${escapeHtml(currentWord.after)}</span>` +
+            (currentWord.note
+                ? `<span class="word-note">${escapeHtml(currentWord.note)}</span>`
+                : "");
+
+
+        const isCorrect =
+            letter === currentWord.correct;
+
+
+        /*
+           Находим кнопку правильного ответа.
+        */
+
+        const correctButton =
+            answerButtons.find(
+                button =>
+                    button.dataset.letter ===
+                    currentWord.correct
+            );
+
+
+        /*
+           Находим выбранную кнопку.
+        */
+
+        const selectedButton =
+            answerButtons.find(
+                button =>
+                    button.dataset.letter ===
+                    letter
+            );
+
+
+        if (isCorrect) {
+
+            /* =========================
+               ПРАВИЛЬНО
+            ========================= */
+
+            // Сохраняем текущее задание до его удаления/обнуления.
+            // Ниже это слово ещё нужно показать в результате.
+            const solvedWord = currentWord;
+
+            /*
+               Если слово уже было ошибочным и сейчас
+               решено правильно на повторе, счётчики
+               "Верно" и "Неверно" НЕ меняются.
+               Меняется только "Всего".
+            */
+
+            if (!currentWordWasPreviouslyWrong) {
+                correctCount++;
+            }
+
+
+            selectedButton
+                ?.classList.add(
+                    "correct-answer"
+                );
+
+
+            /*
+               Удаляем слово навсегда
+               из текущего цикла.
+            */
+
+            removeFromActiveWords(
+                currentWord
+            );
+
+            removeFromDelayedWords(
+                currentWord
+            );
+
+            /*
+               Теперь пересчитываем "Всего" уже ПОСЛЕ
+               удаления задания. Поэтому число сразу
+               уменьшается на 1.
+            */
+            updateStats();
+
+            /*
+               Сохраняем именно новое состояние.
+               Старое currentWord больше не должно
+               возвращаться при повторном открытии темы.
+            */
+            currentWord = null;
+            currentWordWasPreviouslyWrong = false;
+            resumeAfterAnswer = true;
+            saveProgress();
+
+
+            resultElement.className =
+                "result correct-result";
+
+            resultLabel.textContent =
+                "✓ Правильно";
+
+            resultWord.innerHTML =
+                `${escapeHtml(solvedWord.full.replace(/ \([^)]*\)$/, ""))}` +
+                (solvedWord.note
+                    ? `<span class="result-word-note">${escapeHtml(solvedWord.note)}</span>`
+                    : "");
+
+
+            setTimeout(
+                () => {
+
+                    nextWord();
+
+                },
+                1000
+            );
+
+        } else {
+
+            /* =========================
+               ОШИБКА
+            ========================= */
+
+            /*
+               Ошибка учитывается только один раз для задания.
+               Если это повтор уже ошибочного слова,
+               "Неверно" больше не увеличивается.
+            */
+
+            if (!currentWordWasPreviouslyWrong) {
+                wrongCount++;
+            }
+
+            updateStats();
+
+
+            selectedButton
+                ?.classList.add(
+                    "wrong-answer"
+                );
+
+
+            correctButton
+                ?.classList.add(
+                    "correct-answer"
+                );
+
+
+            resultElement.className =
+                "result wrong-result";
+
+
+            resultLabel.textContent =
+                "правильное слово:";
+
+
+            resultWord.innerHTML =
+                `${escapeHtml(currentWord.full.replace(/ \([^)]*\)$/, ""))}` +
+                (currentWord.note
+                    ? `<span class="result-word-note">${escapeHtml(currentWord.note)}</span>`
+                    : "");
+
+
+            /*
+               Слово остаётся незавершённым.
+
+               Откладываем его на 10–20
+               других слов.
+            */
+
+            /*
+               Любая ошибка оставляет слово нерешённым.
+               Для первого ошибочного ответа переносим его из
+               activeWords в delayedWords. Для повторной ошибки
+               слово могло быть временно выбрано из delayedWords,
+               поэтому тоже заново ставим его в очередь с новой
+               задержкой. Это не даёт слову исчезнуть из "Всего".
+            */
+            removeFromActiveWords(
+                currentWord
+            );
+
+            removeFromDelayedWords(
+                currentWord
+            );
+
+            delayedWords.push({
+                word: currentWord,
+                delay: randomDelay()
+            });
+
+            currentWordWasPreviouslyWrong = true;
+
+            resumeAfterAnswer = true;
+            saveProgress();
+
+
+            /*
+               Отправляем ошибку backend.
+               
+               Важно:
+               fetch НЕ закрывает Mini App.
+            */
+
+            sendWrongAnswer(
+                currentWord.full
+            );
+
+
+            /*
+               Через одну секунду
+               переходим дальше.
+            */
+
+            setTimeout(
+                () => {
+
+                    nextWord();
+
+                },
+                1000
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ОТПРАВКА ОШИБКИ BACKEND
+       ========================================================= */
+
+    async function sendWrongAnswer(word) {
+
+        /*
+           Если backend пока не указан —
+           просто ничего не делаем.
+
+           Само приложение продолжает работать.
+        */
+
+        if (!API_URL) {
+
+            console.log(
+                "Backend пока не подключён:",
+                word
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            word: word,
+
+                            /*
+                               Telegram передаёт
+                               подписанные initData.
+
+                               Backend сможет проверить,
+                               что запрос действительно
+                               пришёл от Telegram.
+                            */
+
+                            initData:
+                                tg.initData
+
+                        })
+
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Backend error:",
+                    response.status
+                );
+
+                return;
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Ошибка отправлена:",
+                data
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Не удалось отправить ошибку:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       УДАЛИТЬ ИЗ ACTIVE
+    ========================================================= */
+
+    function removeFromActiveWords(word) {
+
+        activeWords =
+            activeWords.filter(
+                item =>
+                    item !== word
+            );
+
+    }
+
+
+    /* =========================================================
+       УДАЛИТЬ ИЗ DELAYED
+    ========================================================= */
+
+    function removeFromDelayedWords(word) {
+
+        delayedWords =
+            delayedWords.filter(
+                item =>
+                    item.word !== word
+            );
+
+    }
+
+
+    /* =========================================================
+       СТАТИСТИКА
+    ========================================================= */
+
+    function updateStats() {
+
+        correctStat.textContent =
+            `Верно: ${correctCount}`;
+
+
+        wrongStat.textContent =
+            `Неверно: ${wrongCount}`;
+
+
+        /*
+           Всего =
+           количество уникальных слов,
+           которые ещё не были решены правильно.
+
+           Поэтому при ошибке оно НЕ уменьшается.
+
+           При правильном ответе уменьшается.
+        */
+
+        const remaining =
+            activeWords.length +
+            delayedWords.length;
+
+
+        totalStat.textContent =
+            `Всего: ${remaining}`;
+
+    }
+
+
+    /* =========================================================
+       ВАЖНО:
+       После изменения delayedWords
+       статистику нужно обновить.
+    ========================================================= */
+
+    function updateRemainingStat() {
+
+        const remaining =
+            activeWords.length +
+            delayedWords.length;
+
+        totalStat.textContent =
+            `Всего: ${remaining}`;
+
+    }
+
+
+    /* =========================================================
+       РЕЗУЛЬТАТ
+    ========================================================= */
+
+    function clearResult() {
+
+        resultElement.className =
+            "result";
+
+        resultLabel.textContent =
+            "";
+
+        resultWord.innerHTML =
+            "";
+
+    }
+
+
+    /* =========================================================
+       КНОПКИ
+    ========================================================= */
+
+    function resetButtons() {
+
+        answerButtons.forEach(
+            button => {
+
+                button.classList.remove(
+                    "correct-answer",
+                    "wrong-answer",
+                    "disabled",
+                    "selected"
+                );
+
+            }
+        );
+
+        n20NumberButtons.forEach(button => {
+            button.classList.remove(
+                "correct-answer",
+                "wrong-answer",
+                "disabled",
+                "selected"
+            );
+        });
+
+        n20Submit.classList.remove(
+            "correct-answer",
+            "wrong-answer",
+            "disabled",
+            "selected"
+        );
+    }
+
+
+    /* =========================================================
+       ЗАВЕРШЕНИЕ
+    ========================================================= */
+
+    let completedTopicResetTimer = null;
+
+    function finishTraining() {
+
+        answerLocked = true;
+
+        resetButtons();
+
+
+        wordElement.textContent =
+            "🎉";
+
+
+        resultElement.className =
+            "result correct-result";
+
+
+        resultLabel.textContent =
+            "Тренировка завершена";
+
+
+        resultWord.textContent =
+            `Верно: ${correctCount} • Неверно: ${wrongCount}`;
+
+
+        updateStats();
+
+
+        /*
+           Если все задания темы решены правильно
+           и осталось 0 заданий, через 5 секунд
+           полностью восстанавливаем тему.
+        */
+
+        if (
+            activeWords.length === 0 &&
+            delayedWords.length === 0
+        ) {
+
+            // Полностью завершённая тема засчитывается в дневную норму.
+            markTopicCompletedForToday(currentTopicKey);
+
+            if (completedTopicResetTimer) {
+                clearTimeout(completedTopicResetTimer);
+            }
+
+            const completedTopicKey = currentTopicKey;
+
+            completedTopicResetTimer = setTimeout(
+                () => {
+
+                    /*
+                       Если пользователь уже перешёл
+                       в другую тему, старый таймер
+                       не должен менять её состояние.
+                    */
+
+                    if (currentTopicKey !== completedTopicKey) {
+                        return;
+                    }
+
+                    currentWordSet =
+                        completedTopicKey === "dictionary"
+                            ? dictionaryWords
+                            : (completedTopicKey === "n20" ? n20Words : words);
+
+                    activeWords = [...currentWordSet];
+                    delayedWords = [];
+                    currentWord = null;
+                    currentWordWasPreviouslyWrong = false;
+                    currentRoundNumber = 0;
+                    resumeAfterAnswer = false;
+                    answerLocked = false;
+
+                    // Новый цикл темы начинается с чистой статистикой.
+                    correctCount = 0;
+                    wrongCount = 0;
+
+                    // Сохраняем уже сброшенное состояние, чтобы
+                    // следующий запуск не вернул старые значения.
+                    saveProgress();
+                    updateStats();
+                    nextWord();
+
+                    completedTopicResetTimer = null;
+
+                },
+                5000
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       HTML ESCAPE
+    ========================================================= */
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+    // Обновляем огонёк при каждом открытии приложения.
+    refreshStreakForToday();
+
+
+    /* =========================================================
+       TELEGRAM THEME
+    ========================================================= */
+
+    if (
+        tg.themeParams &&
+        tg.themeParams.bg_color
+    ) {
+
+        /*
+           Ничего специально не меняем:
+           дизайн приложения остаётся
+           синим/белым.
+        */
+
+    }
+
+
+</script>
+
+</body>
+</html>
